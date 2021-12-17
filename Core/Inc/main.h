@@ -70,7 +70,7 @@ void Error_Handler(void);
 #define LED_B_Pin GPIO_PIN_8
 #define LED_B_GPIO_Port GPIOG
 /* USER CODE BEGIN Private defines */
-
+void RGB(uint8_t r, uint8_t g, uint8_t b);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

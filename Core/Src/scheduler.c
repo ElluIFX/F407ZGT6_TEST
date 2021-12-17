@@ -13,56 +13,18 @@
 
 // task lists
 static scheduler_task_t schTaskList[] = {
-    {Task_1Hz, 1, 0, 0, 1},
-    {Task_2Hz, 2, 0, 0, 1},
-    {Task_10Hz, 10, 0, 0, 1},
     {Uart_Controller_20Hz, 20, 0, 0, 1},
     {Uart_Overtime_100Hz, 100, 0, 0, 1},
-    {Task_1000Hz, 1000, 0, 0, 0},
+    {Key_Read_100Hz, 100, 0, 0, 0},
+    {Key_Check_1000Hz, 1000, 0, 0, 0},
 };
 const uint8_t SCH_TASK_COUNT = sizeof(schTaskList) / sizeof(scheduler_task_t);
 
-/**
- * @brief scheduler task 2Hz
- * @retval None
- * @note Nothing here
- **/
-void Task_1Hz(void) { return; }
-
-/**
- * @brief scheduler task 5Hz
- * @retval None
- * @note Nothing here
- **/
-void Task_2Hz(void) { return; }
-
-/**
- * @brief scheduler task 10Hz
- * @retval None
- * @note Nothing here
- **/
-void Task_10Hz(void) { return; }
-
-/**
- * @brief scheduler task 20Hz
- * @retval None
- * @note !redefined in main.c
- **/
 __weak void Uart_Controller_20Hz(void) { return; }
-
-/**
- * @brief scheduler task 100Hz
- * @retval None
- * @note !redefined in main.c
- **/
 __weak void Uart_Overtime_100Hz(void) { return; }
-
-/**
- * @brief scheduler task 1000Hz
- * @retval None
- * @note Nothing here
- **/
-void Task_1000Hz(void) { return; }
+__weak void Key_Read_100Hz(void) { return; }
+__weak void Key_Check_1000Hz(void) { return; }
+// @note !redefined in main.c
 
 /************************ scheduler tasks end ************************/
 
@@ -93,5 +55,25 @@ void Scheduler_Run(void) {
       schTaskList[i].lastRunMs = currentTime;
       schTaskList[i].task();
     }
+  }
+}
+
+/**
+ * @brief Enable a task
+ * @param  taskId           Target task id
+ */
+void Enable_SchTask(uint8_t taskId) {
+  if (taskId < SCH_TASK_COUNT) {
+    schTaskList[taskId].enable = 1;
+  }
+}
+
+/**
+ * @brief Disable a task
+ * @param  taskId            Target task id
+ */
+void Disable_SchTask(uint8_t taskId) {
+  if (taskId < SCH_TASK_COUNT) {
+    schTaskList[taskId].enable = 0;
   }
 }

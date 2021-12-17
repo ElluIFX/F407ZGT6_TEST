@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "key.h"
 #include "programCtrl.h"
 #include "scheduler.h"
 #include "stdio.h"
@@ -57,6 +58,7 @@ __IO uint8_t rxFlag = 0;
 __IO uint8_t rxDone = 0;
 __IO uint32_t rxTick = 0;
 
+unsigned short keyValue;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -223,8 +225,9 @@ void Uart_Controller_20Hz(void) {
           case '1':
             userMode = 1;
             printf(
-                "\r\n>>开始电机控制\r\n>>控制对象:MOTOR_1\r\n>>编码器数据:ENC_"
+                "\r\n>>开始电机控制\r\n>>控制对象:MOTOR_1\r\n>>编码器:ENC_"
                 "3\r\n");
+            HAL_Delay(1000);
             break;
           case '2':
             userMode = 2;
@@ -233,6 +236,8 @@ void Uart_Controller_20Hz(void) {
           case '3':
             userMode = 3;
             printf("\r\n>>开始按键读取\r\n");
+            Enable_SchTask(KEY_CHECK_TASK_ID);
+            Enable_SchTask(KEY_READ_TASK_ID);
             break;
           case '4':
             userMode = 4;
@@ -263,12 +268,13 @@ void Uart_Controller_20Hz(void) {
             break;
         }
         break;
-      case 3:  // TODO:按键读取
-        switch (controlWord) {
-          case 'e':
-            printf("\r\n>>按键读取结束\r\n");
-            userMode = 0;
-            break;
+      case 3: 
+        if (controlWord == 'e') {
+          printf("\r\n>>按键读取结束\r\n");
+          Disable_SchTask(KEY_CHECK_TASK_ID);
+          Disable_SchTask(KEY_READ_TASK_ID);
+          userMode = 0;
+          break;
         }
         break;
       case 4:  // LED控制
@@ -312,6 +318,42 @@ void Uart_Controller_20Hz(void) {
         }
         break;
     }
+  }
+  return;
+}
+
+/**
+ * @brief check keys
+ */
+void Key_Check_1000Hz(void) {
+  key_check_all_loop_1ms();
+  return;
+}
+
+/**
+ * @brief read keys
+ */
+void Key_Read_100Hz(void) {
+  keyValue = key_read_value();
+  switch (keyValue) {
+    case KEY1_SHORT:
+      printf("\r\n>>KEY1 短按\r\n");
+      break;
+    case KEY1_LONG:
+      printf("\r\n>>KEY1 长按\r\n");
+      break;
+    case KEY1_DOUBLE:
+      printf("\r\n>>KEY1 双击\r\n");
+      break;
+    case KEY2_SHORT:
+      printf("\r\n>>KEY2 短按\r\n");
+      break;
+    case KEY2_LONG:
+      printf("\r\n>>KEY2 长按\r\n");
+      break;
+    case KEY2_DOUBLE:
+      printf("\r\n>>KEY2 双击\r\n");
+      break;
   }
   return;
 }
