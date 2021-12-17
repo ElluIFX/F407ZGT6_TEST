@@ -25,7 +25,6 @@ static user_task_t userTaskList[] = {
 const uint8_t USER_TASK_COUNT = sizeof(userTaskList) / sizeof(user_task_t);
 
 // TEST: 闪红灯2s - 闪绿灯6s - 闪蓝灯3s
-//  sd
 void User_Task_1(void) {
   // do something
   static uint8_t cnt = 0;
@@ -60,7 +59,7 @@ void User_Task_3(void) {
 void Task_Breakout_Handler(void) {
   // do something
   RGB(1, 0, 1);
-  printf("User Task Break Out!\r\n");
+  printf("\r\nUser Task Break Out!\r\n");
 }
 
 /**
@@ -69,7 +68,7 @@ void Task_Breakout_Handler(void) {
 void Task_Done_Handler(void) {
   // do something
   RGB(1, 1, 1);
-  printf("User Task Done!\r\n");
+  printf("\r\nUser Task Done!\r\n");
 }
 
 /******************** safety tasks end ************************/
@@ -117,7 +116,6 @@ void User_Task_Ctrl(void) {
         userTaskList[taskRunIndex].endFlag = 0;
         if (++taskRunIndex < USER_TASK_COUNT) {
           userTaskList[taskRunIndex].runFlag = 1;
-          printf("\r\ntask switch to: %d\r\n", taskRunIndex);
         }
         taskRunTime = 0;
       }

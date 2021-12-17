@@ -25,10 +25,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "stdio.h"
-#include "string.h"
 #include "programCtrl.h"
 #include "scheduler.h"
+#include "stdio.h"
+#include "string.h"
 
 /* USER CODE END Includes */
 
@@ -208,29 +208,109 @@ void Uart_Overtime_100Hz(void) {
  */
 void Uart_Controller_20Hz(void) {
   static uint8_t controlWord = 0;
+  static uint8_t userMode = 0;
   if (rxDone) {
     rxDone = 0;
     controlWord = rxSaveBuf[0];
-    if (controlWord == '1') {
-      user_task_ctrl_word.runFlag = 1;
-    }
-    if (controlWord == '0') {
-      user_task_ctrl_word.runFlag = 0;
-    }
-    if (controlWord == 'c') {
-      user_task_ctrl_word.continueFlag = 1;
-    }
-    if (controlWord == 'b') {
-      user_task_ctrl_word.breakFlag = 1;
-    }
-    if (controlWord == 'r') {
-      Reset_User_Task();
-    }
-    if (controlWord == '?') {
-      printf("ID:%d RUN:%d DONE:%d \r\n ", user_task_ctrl_word.taskId,
-             user_task_ctrl_word.taskRunning, user_task_ctrl_word.taskListDone);
-      if (user_task_ctrl_word.taskListDone)
-        user_task_ctrl_word.taskListDone = 0;  //清除标志位
+    switch (userMode) {
+      case 0:  //模式切换
+        switch (controlWord) {
+          case '?':
+            printf(
+                "\r\n-------菜单-------\r\n1:电机控制\r\n2:PWM控制\r\n3:"
+                "按键读取\r\n4:LED控制\r\n5:用户事件控制\r\n");
+            break;
+          case '1':
+            userMode = 1;
+            printf(
+                "\r\n>>开始电机控制\r\n>>控制对象:MOTOR_1\r\n>>编码器数据:ENC_"
+                "3\r\n");
+            break;
+          case '2':
+            userMode = 2;
+            printf("\r\n>>开始PWM控制\r\n>>控制对象:MOTOR_2 CHAN_1\r\n");
+            break;
+          case '3':
+            userMode = 3;
+            printf("\r\n>>开始按键读取\r\n");
+            break;
+          case '4':
+            userMode = 4;
+            printf("\r\n>>开始LED控制\r\n");
+            break;
+          case '5':
+            userMode = 5;
+            printf("\r\n>>开始用户事件控制\r\n");
+            break;
+          default:
+            printf("\r\n输入无效\r\n");
+            break;
+        }
+        break;
+      case 1:  // TODO:电机控制
+        switch (controlWord) {
+          case 'e':
+            printf("\r\n>>电机控制结束\r\n");
+            userMode = 0;
+            break;
+        }
+        break;
+      case 2:  // TODO: PWM控制
+        switch (controlWord) {
+          case 'e':
+            printf("\r\n>>PWM控制结束\r\n");
+            userMode = 0;
+            break;
+        }
+        break;
+      case 3:  // TODO:按键读取
+        switch (controlWord) {
+          case 'e':
+            printf("\r\n>>按键读取结束\r\n");
+            userMode = 0;
+            break;
+        }
+        break;
+      case 4:  // LED控制
+        switch (controlWord) {
+          case 'e':
+            printf("\r\n>>LED控制结束\r\n");
+            userMode = 0;
+            break;
+          case 's':
+            RGB(rxSaveBuf[1] - '0', rxSaveBuf[2] - '0', rxSaveBuf[3] - '0');
+            break;
+        }
+        break;
+      case 5:  //用户事件控制
+        switch (controlWord) {
+          case 'e':
+            printf("\r\n>>用户事件控制结束\r\n");
+            userMode = 0;
+            break;
+          case '1':
+            user_task_ctrl_word.runFlag = 1;
+            break;
+          case '2':
+            user_task_ctrl_word.runFlag = 0;
+            break;
+          case 'c':
+            user_task_ctrl_word.continueFlag = 1;
+            break;
+          case 'b':
+            user_task_ctrl_word.breakFlag = 1;
+            break;
+          case 'r':
+            Reset_User_Task();
+          case '?':
+            printf("ID:%d RUN:%d DONE:%d \r\n ", user_task_ctrl_word.taskId,
+                   user_task_ctrl_word.taskRunning,
+                   user_task_ctrl_word.taskListDone);
+            if (user_task_ctrl_word.taskListDone)
+              user_task_ctrl_word.taskListDone = 0;  //清除标志位
+            break;
+        }
+        break;
     }
   }
   return;
