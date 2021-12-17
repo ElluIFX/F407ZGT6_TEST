@@ -21,6 +21,7 @@
 #include "main.h"
 
 #include "gpio.h"
+#include "tim.h"
 #include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -65,6 +66,8 @@ unsigned short keyValue;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void RGB(uint8_t R, uint8_t G, uint8_t B);
+void PWM_Set_Freq_Duty(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t freq,
+                       uint16_t duty);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -101,6 +104,9 @@ int main(void) {
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_TIM1_Init();
+  MX_TIM5_Init();
+  MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
   Scheduler_Init();  // initialize scheduler
   HAL_UART_Receive_IT(&huart1, rxBuf, 1);
@@ -115,6 +121,7 @@ int main(void) {
     User_Task_Ctrl();  // run user task
   }
   /* USER CODE END WHILE */
+
   /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
@@ -198,6 +205,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 void Uart_Overtime_100Hz(void) {
   if (rxFlag && HAL_GetTick() - rxTick > 10) {
     memcpy(rxSaveBuf, (rxBuf + 1), rxBufIdx);
+    rxSaveBuf[rxBufIdx] = 0;
     rxDone = 1;
     rxFlag = 0;
     rxBufIdx = 0;
@@ -211,6 +219,8 @@ void Uart_Overtime_100Hz(void) {
 void Uart_Controller_20Hz(void) {
   static uint8_t controlWord = 0;
   static uint8_t userMode = 0;
+  static uint32_t freq = 0;
+  static uint16_t duty = 0;
   if (rxDone) {
     rxDone = 0;
     controlWord = rxSaveBuf[0];
@@ -219,58 +229,66 @@ void Uart_Controller_20Hz(void) {
         switch (controlWord) {
           case '?':
             printf(
-                "\r\n-------菜单-------\r\n1:电机控制\r\n2:PWM控制\r\n3:"
-                "按键读取\r\n4:LED控制\r\n5:用户事件控制\r\n");
+                "\r\n-------MENU-------\r\n1:Motor control\r\n2:PWM "
+                "control\r\n3:"
+                "Key reading\r\n4:LED control\r\n5:User task control\r\n");
             break;
           case '1':
             userMode = 1;
             printf(
-                "\r\n>>开始电机控制\r\n>>控制对象:MOTOR_1\r\n>>编码器:ENC_"
-                "3\r\n");
+                "\r\n>>Motor control started\r\n>>Target: MOTOR_1 ENC_3\r\n");
             HAL_Delay(1000);
             break;
           case '2':
             userMode = 2;
-            printf("\r\n>>开始PWM控制\r\n>>控制对象:MOTOR_2 CHAN_1\r\n");
+            printf("\r\n>>PWM control started\r\n>>Target: MOTOR_3 CHA_1\r\n");
+            HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
             break;
           case '3':
             userMode = 3;
-            printf("\r\n>>开始按键读取\r\n");
+            printf("\r\n>>Key reading started\r\n");
             Enable_SchTask(KEY_CHECK_TASK_ID);
             Enable_SchTask(KEY_READ_TASK_ID);
             break;
           case '4':
             userMode = 4;
-            printf("\r\n>>开始LED控制\r\n");
+            printf("\r\n>>LED control started\r\n");
             break;
           case '5':
             userMode = 5;
-            printf("\r\n>>开始用户事件控制\r\n");
+            printf("\r\n>>User task control started\r\n");
             break;
           default:
-            printf("\r\n输入无效\r\n");
+            printf("\r\n>>Invalid command\r\n");
             break;
         }
         break;
       case 1:  // TODO:电机控制
         switch (controlWord) {
           case 'e':
-            printf("\r\n>>电机控制结束\r\n");
+            printf("\r\n>>Motor control exit\r\n");
             userMode = 0;
             break;
         }
         break;
-      case 2:  // TODO: PWM控制
-        switch (controlWord) {
-          case 'e':
-            printf("\r\n>>PWM控制结束\r\n");
-            userMode = 0;
-            break;
-        }
-        break;
-      case 3: 
+      case 2:  // PWM控制
         if (controlWord == 'e') {
-          printf("\r\n>>按键读取结束\r\n");
+          printf("\r\n>>PWM control exit\r\n");
+          HAL_TIM_PWM_Stop(&htim8, TIM_CHANNEL_1);
+          userMode = 0;
+          break;
+        }
+        if (sscanf((char *)rxSaveBuf, "f%ld d%hd", &freq, &duty) != 2) {
+          printf("\r\n>>Invalid command\r\n");
+          break;
+        } else {
+          printf("\r\n>>Set Freq:%ldHz\r\n>>Set Duty:%hd%%\r\n", freq, duty);
+          PWM_Set_Freq_Duty(&htim8, TIM_CHANNEL_1, freq, duty);
+        }
+        break;
+      case 3: // 按键读取
+        if (controlWord == 'e') {
+          printf("\r\n>>Key reading exit\r\n");
           Disable_SchTask(KEY_CHECK_TASK_ID);
           Disable_SchTask(KEY_READ_TASK_ID);
           userMode = 0;
@@ -280,7 +298,7 @@ void Uart_Controller_20Hz(void) {
       case 4:  // LED控制
         switch (controlWord) {
           case 'e':
-            printf("\r\n>>LED控制结束\r\n");
+            printf("\r\n>>LED control exit\r\n");
             userMode = 0;
             break;
           case 's':
@@ -291,7 +309,7 @@ void Uart_Controller_20Hz(void) {
       case 5:  //用户事件控制
         switch (controlWord) {
           case 'e':
-            printf("\r\n>>用户事件控制结束\r\n");
+            printf("\r\n>>User task control exit\r\n");
             userMode = 0;
             break;
           case '1':
@@ -337,26 +355,51 @@ void Key_Read_100Hz(void) {
   keyValue = key_read_value();
   switch (keyValue) {
     case KEY1_SHORT:
-      printf("\r\n>>KEY1 短按\r\n");
+      printf("\r\n>>KEY1 SHORT\r\n");
       break;
     case KEY1_LONG:
-      printf("\r\n>>KEY1 长按\r\n");
+      printf("\r\n>>KEY1 LONG\r\n");
       break;
     case KEY1_DOUBLE:
-      printf("\r\n>>KEY1 双击\r\n");
+      printf("\r\n>>KEY1 DOUBLE\r\n");
       break;
     case KEY2_SHORT:
-      printf("\r\n>>KEY2 短按\r\n");
+      printf("\r\n>>KEY2 SHORT\r\n");
       break;
     case KEY2_LONG:
-      printf("\r\n>>KEY2 长按\r\n");
+      printf("\r\n>>KEY2 LONG\r\n");
       break;
     case KEY2_DOUBLE:
-      printf("\r\n>>KEY2 双击\r\n");
+      printf("\r\n>>KEY2 DOUBLE\r\n");
       break;
   }
   return;
 }
+
+/**
+ * @brief Set specified pwm output frequency and duty
+ * @param  htim             Timer
+ * @param  channel          Channel
+ * @param  freq             Frequency
+ * @param  duty             Duty
+ */
+void PWM_Set_Freq_Duty(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t freq,
+                       uint16_t duty) {
+  const uint32_t SYSTEM_CLOCK = 168000000;
+  static uint32_t prescaler = 0;
+  static uint32_t period = 0;
+  static uint32_t pulse = 0;
+  if (freq > 0) {
+    prescaler = (SYSTEM_CLOCK / 200 / freq) - 1;
+    period = 200 - 1;
+    pulse = duty * 2;
+    __HAL_TIM_SET_PRESCALER(htim, prescaler);
+    __HAL_TIM_SET_AUTORELOAD(htim, period);
+    __HAL_TIM_SET_COMPARE(htim, channel, pulse);
+  }
+  return;
+}
+
 /* USER CODE END 4 */
 
 /**
