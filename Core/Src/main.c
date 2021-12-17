@@ -20,6 +20,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+#include "adc.h"
+#include "dac.h"
 #include "gpio.h"
 #include "tim.h"
 #include "usart.h"
@@ -107,10 +109,11 @@ int main(void) {
   MX_TIM1_Init();
   MX_TIM5_Init();
   MX_TIM8_Init();
+  MX_ADC1_Init();
+  MX_DAC_Init();
   /* USER CODE BEGIN 2 */
   Scheduler_Init();  // initialize scheduler
   HAL_UART_Receive_IT(&huart1, rxBuf, 1);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -141,12 +144,11 @@ void SystemClock_Config(void) {
   /** Initializes the RCC Oscillators according to the specified parameters
    * in the RCC_OscInitTypeDef structure.
    */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
@@ -200,7 +202,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   }
 }
 /**
- * @brief 串口超时检查
+ * @brief 串口超时�??�??
  */
 void Uart_Overtime_100Hz(void) {
   if (rxFlag && HAL_GetTick() - rxTick > 10) {
@@ -214,13 +216,17 @@ void Uart_Overtime_100Hz(void) {
 }
 
 /**
- * @brief 测试用，串口遥控器
+ * @brief 测试用，串口控制�?
  */
 void Uart_Controller_20Hz(void) {
   static uint8_t controlWord = 0;
   static uint8_t userMode = 0;
   static uint32_t freq = 0;
   static uint16_t duty = 0;
+  static uint16_t speed = 0;
+  float DACvoltage = 0;
+  double calcValue = 0;
+  uint8_t str[20];
   if (rxDone) {
     rxDone = 0;
     controlWord = rxSaveBuf[0];
@@ -230,8 +236,8 @@ void Uart_Controller_20Hz(void) {
           case '?':
             printf(
                 "\r\n-------MENU-------\r\n1:Motor control\r\n2:PWM "
-                "control\r\n3:"
-                "Key reading\r\n4:LED control\r\n5:User task control\r\n");
+                "control\r\n3:Key reading\r\n4:LED control\r\n5:User task "
+                "control\r\n6:ADC reading\r\n7:DAC output\r\n");
             break;
           case '1':
             userMode = 1;
@@ -258,17 +264,30 @@ void Uart_Controller_20Hz(void) {
             userMode = 5;
             printf("\r\n>>User task control started\r\n");
             break;
+          case '6':
+            userMode = 6;
+            printf("\r\n>>ADC reading started\r\n");
+            break;
+          case '7':
+            userMode = 7;
+            printf("\r\n>>DAC output started\r\n");
+            break;
           default:
             printf("\r\n>>Invalid command\r\n");
             break;
         }
         break;
       case 1:  // TODO:电机控制
-        switch (controlWord) {
-          case 'e':
-            printf("\r\n>>Motor control exit\r\n");
-            userMode = 0;
-            break;
+        if (controlWord == 'e') {
+          printf("\r\n>>Motor control exit\r\n");
+          userMode = 0;
+          break;
+        }
+        if (sscanf((char *)rxSaveBuf, "s:%hd", &speed) == 1) {
+          printf("\r\n>>Set speed: %d rpm\r\n", speed);
+          HAL_Delay(200);
+        } else {
+          printf("\r\n>>Invalid command\r\n");
         }
         break;
       case 2:  // PWM控制
@@ -278,7 +297,7 @@ void Uart_Controller_20Hz(void) {
           userMode = 0;
           break;
         }
-        if (sscanf((char *)rxSaveBuf, "f%ld d%hd", &freq, &duty) != 2) {
+        if (sscanf((char *)rxSaveBuf, "f:%ld,d:%hd", &freq, &duty) != 2) {
           printf("\r\n>>Invalid command\r\n");
           break;
         } else {
@@ -286,7 +305,7 @@ void Uart_Controller_20Hz(void) {
           PWM_Set_Freq_Duty(&htim8, TIM_CHANNEL_1, freq, duty);
         }
         break;
-      case 3: // 按键读取
+      case 3:  // 按键读取
         if (controlWord == 'e') {
           printf("\r\n>>Key reading exit\r\n");
           Disable_SchTask(KEY_CHECK_TASK_ID);
@@ -300,9 +319,10 @@ void Uart_Controller_20Hz(void) {
           case 'e':
             printf("\r\n>>LED control exit\r\n");
             userMode = 0;
+            RGB(0, 0, 0);
             break;
           case 's':
-            RGB(rxSaveBuf[1] - '0', rxSaveBuf[2] - '0', rxSaveBuf[3] - '0');
+            RGB(rxSaveBuf[2] - '0', rxSaveBuf[3] - '0', rxSaveBuf[4] - '0');
             break;
         }
         break;
@@ -331,8 +351,52 @@ void Uart_Controller_20Hz(void) {
                    user_task_ctrl_word.taskRunning,
                    user_task_ctrl_word.taskListDone);
             if (user_task_ctrl_word.taskListDone)
-              user_task_ctrl_word.taskListDone = 0;  //清除标志位
+              user_task_ctrl_word.taskListDone = 0;  //清除标志�?
             break;
+        }
+        break;
+      case 6:  // ADC读取
+        if (controlWord == 'e') {
+          printf("\r\n>>ADC reading exit\r\n");
+          userMode = 0;
+          break;
+        }
+        if (controlWord == 'r') {
+          printf("\r\n>>Acquiring to filter\r\n>>");
+          for (uint8_t n = 0; n < 20; n++) {
+            HAL_ADC_Start(&hadc1);
+            HAL_ADC_PollForConversion(&hadc1, 50);  //等待转换完成
+            if (HAL_IS_BIT_SET(HAL_ADC_GetState(&hadc1),
+                               HAL_ADC_STATE_REG_EOC)) {
+              printf(".");
+              calcValue = HAL_ADC_GetValue(&hadc1) * 3.3 / 4096;
+            }
+            HAL_ADC_Stop(&hadc1);
+          }
+          uint16_t Head = (int)calcValue;
+          uint16_t Point = (int)((calcValue - Head) * 1000.0);
+          sprintf((char *)str, "%d.%d", Head, Point);
+          printf("\r\n>>ADC value: %s V\r\n", str);
+        } else {
+          printf("\r\n>>Invalid command\r\n");
+        }
+        break;
+      case 7:  // DAC输出
+        if (controlWord == 'e') {
+          printf("\r\n>>DAC output exit\r\n");
+          HAL_DAC_Stop(&hdac, DAC_CHANNEL_1);
+          userMode = 0;
+          break;
+        }
+        uint16_t Head, Point = 0;
+        if (sscanf((char *)rxSaveBuf, "s:%d.%d", &Head, &Point) == 2) {
+          DACvoltage = Head + Point / 10.0;
+          HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R,
+                           (uint32_t)(DACvoltage / 3.3 * 4095));
+          HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+          printf("\r\n>>Set DAC output: %d.%d V\r\n", Head, Point);
+        } else {
+          printf("\r\n>>Invalid command\r\n");
         }
         break;
     }
