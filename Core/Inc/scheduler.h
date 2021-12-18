@@ -20,8 +20,8 @@
 #define MOTOR_PID_TASK_ID 5
 
 // typedef
-typedef struct {
-  void (*task)(void);
+typedef struct {       //用户任务结构
+  void (*task)(void);  // task function
   uint16_t rateHz;     // task rate
   uint16_t periodMs;   // task period
   uint32_t lastRunMs;  // last run time
@@ -34,7 +34,7 @@ __weak void Uart_Overtime_100Hz(void);
 __weak void Key_Read_100Hz(void);
 __weak void Key_Check_1000Hz(void);
 __weak void ADC_Read_50Hz(void);
-__weak void Motr_PID_40Hz(void);
+__weak void Motor_PID_40Hz(void);
 
 void Scheduler_Init(void);
 void Scheduler_Run(void);

@@ -18,35 +18,22 @@ static uint8_t taskRunIndex = 0;
 /******************** user tasks ************************/
 // task list
 static user_task_t userTaskList[] = {
-    {User_Task_1, 2000, 0, 0},
-    {User_Task_2, 6000, 0, 0},
-    {User_Task_3, 3000, 0, 0},
+    {User_Task_1, 1000, 0, 0},
+    {User_Task_2, 1000, 0, 0},
+    {User_Task_3, 1000, 0, 0},
 };
 const uint8_t USER_TASK_COUNT = sizeof(userTaskList) / sizeof(user_task_t);
 
-// TEST: 闪红灯2s - 闪绿灯6s - 闪蓝灯3s
 void User_Task_1(void) {
   // do something
-  static uint8_t cnt = 0;
-  cnt = !cnt;
-  RGB(cnt, 0, 0);
-  HAL_Delay(100);
 }
 
 void User_Task_2(void) {
   // do something
-  static uint8_t cnt = 0;
-  cnt = !cnt;
-  RGB(0, cnt, 0);
-  HAL_Delay(100);
 }
 
 void User_Task_3(void) {
   // do something
-  static uint8_t cnt = 0;
-  cnt = !cnt;
-  RGB(0, 0, cnt);
-  HAL_Delay(100);
 }
 
 /******************** user tasks end ************************/
