@@ -38,6 +38,15 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+typedef struct {
+  __IO float setpoint;    //设定目标
+  __IO float sum_error;   //误差累计
+  __IO float proportion;  //比例常数
+  __IO float integral;    //积分常数
+  __IO float derivative;  //微分常数
+  __IO float last_error;  // e[-1]
+  __IO float prev_error;  // e[-2]
+} m_pid_t;
 
 /* USER CODE END PTD */
 
@@ -47,6 +56,14 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#define SPEEDRATIO 30
+#define ENCODER_RESOLUTION 13
+#define Kp 0.18f   // P参数
+#define Ti 0.02f   // I参数
+#define Td 0.012f  // D参数
+#define T 0.05
+#define Ki Kp *(T / Ti)
+#define Kd Kp *(Td / T)
 
 /* USER CODE END PM */
 
@@ -54,8 +71,9 @@
 
 /* USER CODE BEGIN PV */
 uart_ctrl_t uart_1;
-
+__IO float motor1Spd = 0;
 unsigned short keyValue;
+m_pid_t PID1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,6 +82,8 @@ void SystemClock_Config(void);
 void RGB(uint8_t R, uint8_t G, uint8_t B);
 void PWM_Set_Freq_Duty(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t freq,
                        float duty);
+float PID_calc(m_pid_t *PIDx, float NextPoint);
+void PID_Param_Init(m_pid_t *);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -105,6 +125,7 @@ int main(void) {
   MX_TIM8_Init();
   MX_ADC1_Init();
   MX_DAC_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
   Scheduler_Init();  // initialize scheduler
   HAL_UART_Receive_IT(&huart1, uart_1.rxData, 1);
@@ -223,6 +244,7 @@ void Uart_Controller_20Hz(void) {
   static uint32_t freq = 0;
   static float duty = 0;
   static uint16_t speed = 0;
+  static uint16_t pFreq = 0;
   float DACvoltage = 0;
 
   if (uart_1.rxEndFlag) {
@@ -242,6 +264,14 @@ void Uart_Controller_20Hz(void) {
             printf(
                 "\r\n>>Motor control started\r\n>>Target: MOTOR_1 ENC_3\r\n");
             HAL_Delay(1000);
+            PWM_Set_Freq_Duty(&htim1, TIM_CHANNEL_1, 20000, 60);
+            HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+            HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_1);
+            HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_2);
+            HAL_TIM_Base_Start_IT(&htim7);
+            PID_Param_Init(&PID1);
+            PID1.setpoint = 200;
+            Enable_SchTask(MOTOR_PID_TASK_ID);
             break;
           case '2':
             userMode = 2;
@@ -277,16 +307,21 @@ void Uart_Controller_20Hz(void) {
             break;
         }
         break;
-      case 1:  // TODO:电机控制
+      case 1: 
         if (controlWord == 'e') {
           printf("\r\n>>Motor control exit\r\n");
+          HAL_TIM_Base_Stop_IT(&htim7);
+          HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+          Disable_SchTask(MOTOR_PID_TASK_ID);
           userMode = 0;
           break;
         }
         if (sscanf((char *)uart_1.rxSaveBuf, "s:%hd", &speed) == 1) {
-          printf("\r\n>>Set speed: %d rpm\r\n", speed);
-          HAL_Delay(200);
-        } else {
+          // printf("\r\n>>Set speed: %d rpm\r\n", speed);
+          PID1.setpoint = speed;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "f:%hd", &pFreq) == 1) {
+          Set_SchTask_Freq(MOTOR_PID_TASK_ID, pFreq);
+        }else{
           printf("\r\n>>Invalid command\r\n");
         }
         break;
@@ -352,7 +387,7 @@ void Uart_Controller_20Hz(void) {
                    user_task_ctrl_word.taskRunning,
                    user_task_ctrl_word.taskListDone);
             if (user_task_ctrl_word.taskListDone)
-              user_task_ctrl_word.taskListDone = 0;  //清除标志�??
+              user_task_ctrl_word.taskListDone = 0;  //清除标志位
             break;
         }
         break;
@@ -461,6 +496,59 @@ void PWM_Set_Freq_Duty(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t freq,
   return;
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  static uint8_t cnt = 0;
+  if (htim == &htim7) {
+    cnt = !cnt;
+    RGB(cnt, 0, 0);
+    motor1Spd = ((float)((short)__HAL_TIM_GET_COUNTER(&htim5)) * 3000.0f /
+                 ENCODER_RESOLUTION / SPEEDRATIO);
+    __HAL_TIM_SET_COUNTER(&htim5, 0);
+  }
+}
+
+void Motr_PID_40Hz(void) {
+  static uint8_t cnt = 0;
+  static float pwm1Duty;
+  static uint32_t counter = 0;
+  counter++;
+  cnt = !cnt;
+  RGB(0, 0, cnt);
+  PID1.sum_error += PID_calc(&PID1, motor1Spd);
+  if (PID1.sum_error > 100 * 20) PID1.sum_error = 100 * 20;
+  pwm1Duty = PID1.sum_error / 20.0;
+  PWM_Set_Freq_Duty(&htim1, TIM_CHANNEL_1, 20000, pwm1Duty);
+  if (counter % 2 == 0) printf("M1:%f,%f\r\n", motor1Spd, pwm1Duty);
+}
+
+void PID_Param_Init(m_pid_t *PIDx) {
+  PIDx->last_error = 0;  // Error[-1]
+  PIDx->setpoint = 0;    // 设定目标Desired Value
+  PIDx->sum_error = 0;
+  PIDx->prev_error = 0;
+  PIDx->proportion = Kp;
+  PIDx->integral = Ki;
+  PIDx->derivative = Kd;
+}
+
+float PID_calc(m_pid_t *PIDx, float nextpoint) {
+  const float MAX_I = 200;
+  float iError, iincpid;
+  iError = PIDx->setpoint - nextpoint;  //当前误差
+  /*iincpid=                                               //增量计算
+  PIDx->proportion*iError                //e[k]项
+  -PIDx->integral*PIDx->last_error          //e[k-1]
+  +PIDx->derivative*PIDx->prev_error;//e[k-2]
+  */
+  iincpid =  //增量计算
+      PIDx->proportion * (iError - PIDx->last_error) + PIDx->integral * iError +
+      PIDx->derivative * (iError - 2 * PIDx->last_error + PIDx->prev_error);
+  if (iincpid < -MAX_I) iincpid = -MAX_I;
+  if (iincpid > MAX_I) iincpid = MAX_I;
+  PIDx->prev_error = PIDx->last_error;  //存储误差，便于下次计算
+  PIDx->last_error = iError;
+  return (iincpid);
+}
 /* USER CODE END 4 */
 
 /**

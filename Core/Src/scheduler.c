@@ -18,6 +18,7 @@ static scheduler_task_t schTaskList[] = {
     {Key_Read_100Hz, 100, 0, 0, 0},
     {Key_Check_1000Hz, 1000, 0, 0, 0},
     {ADC_Read_50Hz, 50, 0, 0, 0},
+    {Motr_PID_40Hz, 40, 0, 0, 0},
 };
 const uint8_t SCH_TASK_COUNT = sizeof(schTaskList) / sizeof(scheduler_task_t);
 
@@ -26,6 +27,7 @@ __weak void Uart_Overtime_100Hz(void) { return; }
 __weak void Key_Read_100Hz(void) { return; }
 __weak void Key_Check_1000Hz(void) { return; }
 __weak void ADC_Read_50Hz(void) { return; }
+__weak void Motr_PID_40Hz(void) { return; }
 
 // @note !redefined in main.c
 

@@ -17,6 +17,7 @@
 #define KEY_READ_TASK_ID 2
 #define KEY_CHECK_TASK_ID 3
 #define ADC_READ_TASK_ID 4
+#define MOTOR_PID_TASK_ID 5
 
 // typedef
 typedef struct {
@@ -33,6 +34,7 @@ __weak void Uart_Overtime_100Hz(void);
 __weak void Key_Read_100Hz(void);
 __weak void Key_Check_1000Hz(void);
 __weak void ADC_Read_50Hz(void);
+__weak void Motr_PID_40Hz(void);
 
 void Scheduler_Init(void);
 void Scheduler_Run(void);
