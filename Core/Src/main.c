@@ -53,13 +53,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t rxBuf[RX_BUFFER_SIZE + 1];
-uint8_t rxSaveBuf[RX_BUFFER_SIZE];
-
-__IO uint8_t rxBufIdx = 0;
-__IO uint8_t rxFlag = 0;
-__IO uint8_t rxDone = 0;
-__IO uint32_t rxTick = 0;
+uart_ctrl_t uart_1;
 
 unsigned short keyValue;
 /* USER CODE END PV */
@@ -69,7 +63,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void RGB(uint8_t R, uint8_t G, uint8_t B);
 void PWM_Set_Freq_Duty(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t freq,
-                       uint16_t duty);
+                       float duty);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -113,12 +107,13 @@ int main(void) {
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
   Scheduler_Init();  // initialize scheduler
-  HAL_UART_Receive_IT(&huart1, rxBuf, 1);
+  HAL_UART_Receive_IT(&huart1, uart_1.rxData, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   printf("System running...\r\n");
+  printf("float:%f\r\n", 3.1415926);
   while (1) {
     Scheduler_Run();   // run scheduler
     User_Task_Ctrl();  // run user task
@@ -190,46 +185,49 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   if (huart->Instance == USART1) {
-    rxFlag = 1;
-    rxTick = HAL_GetTick();
-    (rxBuf + 1)[rxBufIdx++] = rxBuf[0];
-    if (rxBufIdx >= RX_BUFFER_SIZE) {
-      HAL_UART_Transmit_IT(&huart1, rxBuf + 1, rxBufIdx);
-      rxFlag = 0;
-      rxBufIdx = 0;
+    uart_1.rxStartFlag = 1;
+    uart_1.rxTick = HAL_GetTick();
+    uart_1.rxBuf[uart_1.rxBufIndex++] = uart_1.rxData[0];
+    if (uart_1.rxBufIndex >= RX_BUFFER_SIZE) {
+      memcpy(uart_1.rxSaveBuf, uart_1.rxBuf, uart_1.rxBufIndex);
+      uart_1.rxCounter = uart_1.rxBufIndex;
+      uart_1.rxSaveBuf[uart_1.rxBufIndex] = 0;
+      uart_1.rxEndFlag = 1;
+      uart_1.rxStartFlag = 0;
+      uart_1.rxBufIndex = 0;
     }
-    HAL_UART_Receive_IT(&huart1, rxBuf, 1);
+    HAL_UART_Receive_IT(&huart1, uart_1.rxData, 1);
   }
 }
 /**
- * @brief 串口超时�??�??
+ * @brief 串口超时处理
  */
 void Uart_Overtime_100Hz(void) {
-  if (rxFlag && HAL_GetTick() - rxTick > 10) {
-    memcpy(rxSaveBuf, (rxBuf + 1), rxBufIdx);
-    rxSaveBuf[rxBufIdx] = 0;
-    rxDone = 1;
-    rxFlag = 0;
-    rxBufIdx = 0;
+  if (uart_1.rxStartFlag && HAL_GetTick() - uart_1.rxTick > 10) {
+    memcpy(uart_1.rxSaveBuf, uart_1.rxBuf, uart_1.rxBufIndex);
+    uart_1.rxCounter = uart_1.rxBufIndex;
+    uart_1.rxSaveBuf[uart_1.rxBufIndex] = 0;
+    uart_1.rxEndFlag = 1;
+    uart_1.rxStartFlag = 0;
+    uart_1.rxBufIndex = 0;
   }
   return;
 }
 
 /**
- * @brief 测试用，串口控制�?
+ * @brief 测试用，串口控制
  */
 void Uart_Controller_20Hz(void) {
   static uint8_t controlWord = 0;
   static uint8_t userMode = 0;
   static uint32_t freq = 0;
-  static uint16_t duty = 0;
+  static float duty = 0;
   static uint16_t speed = 0;
   float DACvoltage = 0;
-  double calcValue = 0;
-  uint8_t str[20];
-  if (rxDone) {
-    rxDone = 0;
-    controlWord = rxSaveBuf[0];
+
+  if (uart_1.rxEndFlag) {
+    uart_1.rxEndFlag = 0;
+    controlWord = uart_1.rxSaveBuf[0];
     switch (userMode) {
       case 0:  //模式切换
         switch (controlWord) {
@@ -267,6 +265,8 @@ void Uart_Controller_20Hz(void) {
           case '6':
             userMode = 6;
             printf("\r\n>>ADC reading started\r\n");
+            HAL_Delay(1000);
+            Enable_SchTask(ADC_READ_TASK_ID);
             break;
           case '7':
             userMode = 7;
@@ -283,7 +283,7 @@ void Uart_Controller_20Hz(void) {
           userMode = 0;
           break;
         }
-        if (sscanf((char *)rxSaveBuf, "s:%hd", &speed) == 1) {
+        if (sscanf((char *)uart_1.rxSaveBuf, "s:%hd", &speed) == 1) {
           printf("\r\n>>Set speed: %d rpm\r\n", speed);
           HAL_Delay(200);
         } else {
@@ -297,11 +297,11 @@ void Uart_Controller_20Hz(void) {
           userMode = 0;
           break;
         }
-        if (sscanf((char *)rxSaveBuf, "f:%ld,d:%hd", &freq, &duty) != 2) {
+        if (sscanf((char *)uart_1.rxSaveBuf, "f:%ld,d:%f", &freq, &duty) != 2) {
           printf("\r\n>>Invalid command\r\n");
           break;
         } else {
-          printf("\r\n>>Set Freq:%ldHz\r\n>>Set Duty:%hd%%\r\n", freq, duty);
+          printf("\r\n>>Set Freq:%ldHz\r\n>>Set Duty:%f%%\r\n", freq, duty);
           PWM_Set_Freq_Duty(&htim8, TIM_CHANNEL_1, freq, duty);
         }
         break;
@@ -322,7 +322,8 @@ void Uart_Controller_20Hz(void) {
             RGB(0, 0, 0);
             break;
           case 's':
-            RGB(rxSaveBuf[2] - '0', rxSaveBuf[3] - '0', rxSaveBuf[4] - '0');
+            RGB(uart_1.rxSaveBuf[2] - '0', uart_1.rxSaveBuf[3] - '0',
+                uart_1.rxSaveBuf[4] - '0');
             break;
         }
         break;
@@ -351,34 +352,16 @@ void Uart_Controller_20Hz(void) {
                    user_task_ctrl_word.taskRunning,
                    user_task_ctrl_word.taskListDone);
             if (user_task_ctrl_word.taskListDone)
-              user_task_ctrl_word.taskListDone = 0;  //清除标志�?
+              user_task_ctrl_word.taskListDone = 0;  //清除标志�??
             break;
         }
         break;
       case 6:  // ADC读取
         if (controlWord == 'e') {
           printf("\r\n>>ADC reading exit\r\n");
+          Disable_SchTask(ADC_READ_TASK_ID);
           userMode = 0;
           break;
-        }
-        if (controlWord == 'r') {
-          printf("\r\n>>Acquiring to filter\r\n>>");
-          for (uint8_t n = 0; n < 20; n++) {
-            HAL_ADC_Start(&hadc1);
-            HAL_ADC_PollForConversion(&hadc1, 50);  //等待转换完成
-            if (HAL_IS_BIT_SET(HAL_ADC_GetState(&hadc1),
-                               HAL_ADC_STATE_REG_EOC)) {
-              printf(".");
-              calcValue = HAL_ADC_GetValue(&hadc1) * 3.3 / 4096;
-            }
-            HAL_ADC_Stop(&hadc1);
-          }
-          uint16_t Head = (int)calcValue;
-          uint16_t Point = (int)((calcValue - Head) * 1000.0);
-          sprintf((char *)str, "%d.%d", Head, Point);
-          printf("\r\n>>ADC value: %s V\r\n", str);
-        } else {
-          printf("\r\n>>Invalid command\r\n");
         }
         break;
       case 7:  // DAC输出
@@ -388,13 +371,11 @@ void Uart_Controller_20Hz(void) {
           userMode = 0;
           break;
         }
-        uint16_t Head, Point = 0;
-        if (sscanf((char *)rxSaveBuf, "s:%d.%d", &Head, &Point) == 2) {
-          DACvoltage = Head + Point / 10.0;
+        if (sscanf((char *)uart_1.rxSaveBuf, "s:%f", &DACvoltage) == 1) {
           HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R,
                            (uint32_t)(DACvoltage / 3.3 * 4095));
           HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-          printf("\r\n>>Set DAC output: %d.%d V\r\n", Head, Point);
+          printf("\r\n>>Set DAC output: %f V\r\n", DACvoltage);
         } else {
           printf("\r\n>>Invalid command\r\n");
         }
@@ -441,6 +422,23 @@ void Key_Read_100Hz(void) {
 }
 
 /**
+ * @brief Read ADC value
+ */
+void ADC_Read_50Hz(void) {
+  double calcValue = 0;
+  static uint8_t str[20];
+  HAL_ADC_Start(&hadc1);
+  HAL_ADC_PollForConversion(&hadc1, 50);  //等待转换完成
+  if (HAL_IS_BIT_SET(HAL_ADC_GetState(&hadc1), HAL_ADC_STATE_REG_EOC)) {
+    calcValue = HAL_ADC_GetValue(&hadc1) * 3.3 / 4096;
+  }
+  HAL_ADC_Stop(&hadc1);
+  sprintf((char *)str, "%.4f", calcValue);
+  printf("ADC:%s\r\n", str);
+  return;
+}
+
+/**
  * @brief Set specified pwm output frequency and duty
  * @param  htim             Timer
  * @param  channel          Channel
@@ -448,19 +446,18 @@ void Key_Read_100Hz(void) {
  * @param  duty             Duty
  */
 void PWM_Set_Freq_Duty(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t freq,
-                       uint16_t duty) {
+                       float duty) {
   const uint32_t SYSTEM_CLOCK = 168000000;
   static uint32_t prescaler = 0;
   static uint32_t period = 0;
   static uint32_t pulse = 0;
-  if (freq > 0) {
-    prescaler = (SYSTEM_CLOCK / 200 / freq) - 1;
-    period = 200 - 1;
-    pulse = duty * 2;
-    __HAL_TIM_SET_PRESCALER(htim, prescaler);
-    __HAL_TIM_SET_AUTORELOAD(htim, period);
-    __HAL_TIM_SET_COMPARE(htim, channel, pulse);
-  }
+  prescaler = (SYSTEM_CLOCK / 1000 / freq) - 1;
+  period = 1000 - 1;
+  pulse = duty * 10;
+  __HAL_TIM_SET_PRESCALER(htim, prescaler);
+  __HAL_TIM_SET_AUTORELOAD(htim, period);
+  __HAL_TIM_SET_COMPARE(htim, channel, pulse);
+
   return;
 }
 

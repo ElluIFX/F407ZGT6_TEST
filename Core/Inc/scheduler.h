@@ -16,6 +16,7 @@
 #define UART_OVERTIME_TASK_ID 1
 #define KEY_READ_TASK_ID 2
 #define KEY_CHECK_TASK_ID 3
+#define ADC_READ_TASK_ID 4
 
 // typedef
 typedef struct {
@@ -27,17 +28,15 @@ typedef struct {
 } scheduler_task_t;
 // private variables
 // private functions
-void Task_1Hz(void);
-void Task_2Hz(void);
-void Task_10Hz(void);
 __weak void Uart_Controller_20Hz(void);
 __weak void Uart_Overtime_100Hz(void);
 __weak void Key_Read_100Hz(void);
 __weak void Key_Check_1000Hz(void);
-void Task_1000Hz(void);
+__weak void ADC_Read_50Hz(void);
 
 void Scheduler_Init(void);
 void Scheduler_Run(void);
 void Enable_SchTask(uint8_t taskId);
 void Disable_SchTask(uint8_t taskId);
+void Set_SchTask_Freq(uint8_t taskId, uint16_t freq);
 #endif  // _SCHEDULER_H_
