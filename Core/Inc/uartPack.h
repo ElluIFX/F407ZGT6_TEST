@@ -47,7 +47,7 @@ typedef struct {                      //单结束位型UART控制结构体
 
 void Enable_Uart_O_Control(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl);
 void Enable_Uart_E_Control(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl);
-void Uart_O_Data_Process(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl);
-void Uart_O_Timeout_Check(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl);
-void Uart_E_Data_Process(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl);
+uint8_t Uart_O_Data_Process(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl);
+uint8_t Uart_O_Timeout_Check(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl);
+uint8_t Uart_E_Data_Process(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl);
 #endif

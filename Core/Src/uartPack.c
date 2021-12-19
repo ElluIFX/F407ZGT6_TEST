@@ -62,8 +62,9 @@ void Enable_Uart_E_Control(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl) {
  * @brief Process Overtime UART data, call in HAL_UART_RxCpltCallback
  * @param  huart            target UART handle
  * @param  ctrl             target UART controller
+ * @retval 1: data overflow, 0: no data overflow
  */
-void Uart_O_Data_Process(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl) {
+uint8_t Uart_O_Data_Process(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl) {
   ctrl->rxFlag = 1;
   ctrl->rxTick = HAL_GetTick();
   ctrl->rxBuf[ctrl->rxBufIndex++] = ctrl->rxData[0];
@@ -82,8 +83,9 @@ void Uart_O_Data_Process(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl) {
  * @brief Overtime UART timeout check, call in scheduler
  * @param  huart            target UART handle
  * @param  ctrl             target UART controller
+ * @retval 1: timeout, 0: not timeout
  */
-void Uart_O_Timeout_Check(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl) {
+uint8_t Uart_O_Timeout_Check(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl) {
   if (ctrl->rxFlag && HAL_GetTick() - ctrl->rxTick > 10) {
     memcpy(ctrl->rxSaveBuf, ctrl->rxBuf, ctrl->rxBufIndex);
     ctrl->rxSaveCounter = ctrl->rxBufIndex;
@@ -91,15 +93,18 @@ void Uart_O_Timeout_Check(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl) {
     ctrl->rxSaveFlag = 1;
     ctrl->rxFlag = 0;
     ctrl->rxBufIndex = 0;
+    return 1;
   }
+  return 0;
 }
 
 /**
  * @brief Process Single Ending Bit UART data, call in HAL_UART_RxCpltCallback
  * @param  huart            target UART handle
  * @param  ctrl             target UART controller
+ * @retval 1: end bit, 0: not end bit
  */
-void Uart_E_Data_Process(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl) {
+uint8_t Uart_E_Data_Process(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl) {
   ctrl->rxFlag = 1;
   ctrl->rxBuf[ctrl->rxBufIndex++] = ctrl->rxData[0];
   if (ctrl->rxBufIndex >= RX_BUFFER_SIZE - 1 ||

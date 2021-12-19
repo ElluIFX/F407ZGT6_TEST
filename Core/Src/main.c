@@ -225,8 +225,7 @@ void Uart_Controller_20Hz(void) {
             printf(
                 "\r\n-------MENU-------\r\n1:Motor control\r\n2:PWM "
                 "control\r\n3:Key reading\r\n4:LED control\r\n5:User task "
-                "control\r\n6:ADC reading\r\n7:DAC output\r\n8:Scheduler "
-                "Debug\r\n ");
+                "control\r\n6:ADC reading\r\n7:DAC output\r\n ");
             break;
           case '1':
             userMode = 1;
@@ -440,15 +439,13 @@ void Key_Read_100Hz(void) {
  */
 void ADC_Read_50Hz(void) {
   double calcValue = 0;
-  static uint8_t str[20];
   HAL_ADC_Start(&hadc1);
   HAL_ADC_PollForConversion(&hadc1, 50);  //等待转换完成
   if (HAL_IS_BIT_SET(HAL_ADC_GetState(&hadc1), HAL_ADC_STATE_REG_EOC)) {
     calcValue = HAL_ADC_GetValue(&hadc1) * 3.3 / 4096;
   }
   HAL_ADC_Stop(&hadc1);
-  sprintf((char *)str, "%.4f", calcValue);
-  printf("ADC:%s\r\n", str);
+  printf("ADC:%.4f\r\n", calcValue);
   return;
 }
 
