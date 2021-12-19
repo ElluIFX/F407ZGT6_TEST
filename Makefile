@@ -40,6 +40,7 @@ Core/Src/main.c \
 Core/Src/gpio.c \
 Core/Src/key.c \
 Core/Src/pid.c \
+Core/Src/uartPack.c \
 Core/Src/programCtrl.c \
 Core/Src/scheduler.c \
 Core/Src/usart.c \

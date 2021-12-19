@@ -12,6 +12,8 @@
 
 #include "main.h"
 //  defines
+// #define _ENABLE_SCH_DEBUG
+
 #define UART_CONTROLLER_TASK_ID 0
 #define UART_OVERTIME_TASK_ID 1
 #define KEY_READ_TASK_ID 2
@@ -19,10 +21,11 @@
 #define ADC_READ_TASK_ID 4
 #define MOTOR_PID_TASK_ID 5
 
+#define SCH_TASK_COUNT  sizeof(schTaskList) / sizeof(scheduler_task_t)
 // typedef
 typedef struct {       //用户任务结构
   void (*task)(void);  // task function
-  uint16_t rateHz;     // task rate
+  float rateHz;     // task rate
   uint16_t periodMs;   // task period
   uint32_t lastRunMs;  // last run time
   uint8_t enable;      // enable or disable
@@ -40,5 +43,8 @@ void Scheduler_Init(void);
 void Scheduler_Run(void);
 void Enable_SchTask(uint8_t taskId);
 void Disable_SchTask(uint8_t taskId);
-void Set_SchTask_Freq(uint8_t taskId, uint16_t freq);
+void Set_SchTask_Freq(uint8_t taskId, float freq);
+#ifdef _ENABLE_SCH_DEBUG
+void Show_Sch_Debug_info(void);
+#endif  // _ENABLE_SCH_DEBUG
 #endif  // _SCHEDULER_H_

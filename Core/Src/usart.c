@@ -21,32 +21,6 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
-
-#include "stdio.h"
-
-//修正标准库流
-struct __FILE {
-  int handle;
-};
-
-FILE __stdout;
-//定义_sys_exit()禁用半主机模式
-void _sys_exit(int x) { x = x; }
-//重定义fputc函数
-// int fputc(int ch, FILE *f)
-// {
-//         /* Place your implementation of fputc here */
-//         /* e.g. write a character to the EVAL_COM1 and Loop until the end of
-//         transmission */ HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0x100);
-//         return ch;
-// }
-int _write(int fd, char* ch, int len) {
-  HAL_UART_Transmit_IT(&huart1, (uint8_t*)ch, len);
-  while (huart1.gState != HAL_UART_STATE_READY) {
-  }
-  return len;
-}
-
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;

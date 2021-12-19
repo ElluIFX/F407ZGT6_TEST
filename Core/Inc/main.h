@@ -37,18 +37,6 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-#define RX_BUFFER_SIZE 128
-#define RX_OVERTIME_MS 10
-typedef struct {
-  __IO uint8_t rxStartFlag;
-  __IO uint8_t rxEndFlag;
-  uint8_t rxData[2];
-  uint8_t rxBuf[RX_BUFFER_SIZE];
-  __IO uint8_t rxBufIndex;
-  __IO uint8_t rxCounter;
-  uint8_t rxSaveBuf[RX_BUFFER_SIZE];
-  __IO uint32_t rxTick;
-} uart_ctrl_t;
 
 /* USER CODE END ET */
 

@@ -34,7 +34,7 @@
 #include "scheduler.h"
 #include "stdio.h"
 #include "string.h"
-
+#include "uartPack.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,7 +56,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uart_ctrl_t uart_1;
+uart_o_ctrl_t uart_1;
 __IO float motor1Spd = 0;
 unsigned short keyValue;
 inc_pid_t PID1;
@@ -112,13 +112,12 @@ int main(void) {
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
   Scheduler_Init();  // initialize scheduler
-  HAL_UART_Receive_IT(&huart1, uart_1.rxData, 1);
+  Enable_Uart_O_Control(&huart1, &uart_1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  printf("System running...\r\n");
-  printf("float:%f\r\n", 3.1415926);
+  printf("\r\n--- System running ---\r\n");
   while (1) {
     Scheduler_Run();   // run scheduler
     User_Task_Ctrl();  // run user task
@@ -190,32 +189,15 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   if (huart->Instance == USART1) {
-    uart_1.rxStartFlag = 1;
-    uart_1.rxTick = HAL_GetTick();
-    uart_1.rxBuf[uart_1.rxBufIndex++] = uart_1.rxData[0];
-    if (uart_1.rxBufIndex >= RX_BUFFER_SIZE) {
-      memcpy(uart_1.rxSaveBuf, uart_1.rxBuf, uart_1.rxBufIndex);
-      uart_1.rxCounter = uart_1.rxBufIndex;
-      uart_1.rxSaveBuf[uart_1.rxBufIndex] = 0;
-      uart_1.rxEndFlag = 1;
-      uart_1.rxStartFlag = 0;
-      uart_1.rxBufIndex = 0;
-    }
-    HAL_UART_Receive_IT(&huart1, uart_1.rxData, 1);
+    Uart_O_Data_Process(&huart1, &uart_1);
   }
 }
+
 /**
  * @brief 串口超时处理
  */
 void Uart_Overtime_100Hz(void) {
-  if (uart_1.rxStartFlag && HAL_GetTick() - uart_1.rxTick > 10) {
-    memcpy(uart_1.rxSaveBuf, uart_1.rxBuf, uart_1.rxBufIndex);
-    uart_1.rxCounter = uart_1.rxBufIndex;
-    uart_1.rxSaveBuf[uart_1.rxBufIndex] = 0;
-    uart_1.rxEndFlag = 1;
-    uart_1.rxStartFlag = 0;
-    uart_1.rxBufIndex = 0;
-  }
+  Uart_O_Timeout_Check(&huart1, &uart_1);
   return;
 }
 
@@ -223,7 +205,6 @@ void Uart_Overtime_100Hz(void) {
  * @brief 测试用，串口控制
  */
 void Uart_Controller_20Hz(void) {
-  static uint8_t controlWord = 0;
   static uint8_t userMode = 0;
   static uint32_t freq = 0;
   static float duty = 0;
@@ -233,9 +214,9 @@ void Uart_Controller_20Hz(void) {
   static float setKi = 0;
   static float setKd = 0;
   float DACvoltage = 0;
-
-  if (uart_1.rxEndFlag) {
-    uart_1.rxEndFlag = 0;
+  uint8_t controlWord = 0;
+  if (uart_1.rxSaveFlag) {
+    uart_1.rxSaveFlag = 0;
     controlWord = uart_1.rxSaveBuf[0];
     switch (userMode) {
       case 0:  //模式切换
@@ -244,7 +225,8 @@ void Uart_Controller_20Hz(void) {
             printf(
                 "\r\n-------MENU-------\r\n1:Motor control\r\n2:PWM "
                 "control\r\n3:Key reading\r\n4:LED control\r\n5:User task "
-                "control\r\n6:ADC reading\r\n7:DAC output\r\n");
+                "control\r\n6:ADC reading\r\n7:DAC output\r\n8:Scheduler "
+                "Debug\r\n ");
             break;
           case '1':
             userMode = 1;
@@ -432,6 +414,7 @@ void Key_Read_100Hz(void) {
   switch (keyValue) {
     case KEY1_SHORT:
       printf("\r\n>>KEY1 SHORT\r\n");
+      HAL_Delay(50);
       break;
     case KEY1_LONG:
       printf("\r\n>>KEY1 LONG\r\n");
@@ -488,7 +471,6 @@ void PWM_Set_Freq_Duty(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t freq,
   __HAL_TIM_SET_PRESCALER(htim, prescaler);
   __HAL_TIM_SET_AUTORELOAD(htim, period);
   __HAL_TIM_SET_COMPARE(htim, channel, pulse);
-
   return;
 }
 
@@ -510,7 +492,7 @@ void Motor_PID_40Hz(void) {
   counter++;
   cnt = !cnt;
   RGB(0, 0, cnt);
-  PID1.sumError += Inc_PID_Calc(&PID1, motor1Spd);          //计算PID增量
+  PID1.sumError += Inc_PID_Calc(&PID1, motor1Spd);         //计算PID增量
   if (PID1.sumError > 100 * 20) PID1.sumError = 100 * 20;  // pwm限幅
   pwm1Duty = PID1.sumError / 20.0;  //换算为pwm占空比
   PWM_Set_Freq_Duty(&htim1, TIM_CHANNEL_1, 20000, pwm1Duty);
