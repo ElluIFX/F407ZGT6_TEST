@@ -65,16 +65,6 @@ float Pos_PID_Calc(pos_pid_t *PIDx, int32_t nextPoint) {
   return output;
 }
 
-/**
- * @brief Reset Position PID error
- * @param  PIDx             Target
- */
-void Pos_PID_Clear(pos_pid_t *PIDx) {
-  PIDx->error_1 = 0;
-  PIDx->error_2 = 0;
-  PIDx->sumError = 0;
-}
-
 /****************** Speed PID Functions ******************/
 
 /**
@@ -126,16 +116,6 @@ float Spd_PID_Calc(spd_pid_t *PIDx, float nextPoint) {
   return output;
 }
 
-/**
- * @brief Reset Speed PID error
- * @param  PIDx             Target
- */
-void Spd_PID_Clear(spd_pid_t *PIDx) {
-  PIDx->error_1 = 0;
-  PIDx->error_2 = 0;
-  PIDx->sumError = 0;
-}
-
 /****************** Incremental PID Functions ******************/
 
 /**
@@ -172,16 +152,6 @@ float Inc_PID_Calc(inc_pid_t *PIDx, float nextPoint) {
   PIDx->error_2 = PIDx->error_1;
   PIDx->error_1 = error_0;
   return (inc);
-}
-
-/**
- * @brief Reset Incremental PID error
- * @param  PIDx             Target
- */
-void Inc_PID_Clear(inc_pid_t *PIDx) {
-  PIDx->error_1 = 0;
-  PIDx->error_2 = 0;
-  PIDx->sumError = 0;
 }
 
 /****************** All PID Functions End ******************/

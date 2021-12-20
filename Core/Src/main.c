@@ -208,11 +208,13 @@ void Uart_Controller_20Hz(void) {
   static uint8_t userMode = 0;
   static uint32_t freq = 0;
   static float duty = 0;
-  static uint16_t speed = 0;
-  static uint16_t pFreq = 0;
-  static float setKp = 0;
-  static float setKi = 0;
-  static float setKd = 0;
+  static float speed = 0;
+  static float setPosKp = 0;
+  static float setPosKi = 0;
+  static float setPosKd = 0;
+  static float setSpdKp = 0;
+  static float setSpdKi = 0;
+  static float setSpdKd = 0;
   float DACvoltage = 0;
   uint8_t controlWord = 0;
   if (uart_1.rxSaveFlag) {
@@ -232,7 +234,10 @@ void Uart_Controller_20Hz(void) {
             printf(
                 "\r\n>>Motor control started\r\n>>Target: MOTOR_1 ENC_3\r\n");
             HAL_Delay(1000);
-            Enable_SchTask(MOTOR_PID_TASK_ID);
+            __MOTOR_RESET_ENCODER(motor_1);  //防止积累误差造成过冲
+            HAL_TIM_Base_Start_IT(&htim7);   //开转速计算
+            Enable_SchTask(MOTOR_POS_PID_TASK_ID);
+            Enable_SchTask(MOTOR_SPD_PID_TASK_ID);
             break;
           case '2':
             userMode = 2;
@@ -268,20 +273,29 @@ void Uart_Controller_20Hz(void) {
             break;
         }
         break;
-      case 1:
+      case 1:  //电机控制
         if (controlWord == 'e') {
           printf("\r\n>>Motor control exit\r\n");
-          HAL_TIM_Base_Stop_IT(&htim7);
-          HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
-          Disable_SchTask(MOTOR_PID_TASK_ID);
+          HAL_TIM_Base_Stop_IT(&htim7);  //停转速计算
+          Disable_SchTask(MOTOR_POS_PID_TASK_ID);
+          Disable_SchTask(MOTOR_SPD_PID_TASK_ID);
           userMode = 0;
           break;
         }
-        if (sscanf((char *)uart_1.rxSaveBuf, "s:%hd", &speed) == 1) {
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "f:%hd", &pFreq) == 1) {
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "p:%f", &setKp) == 1) {
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "i:%f", &setKi) == 1) {
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "d:%f", &setKd) == 1) {
+        if (sscanf((char *)uart_1.rxSaveBuf, "s:%f", &speed) == 1) {
+          motor_1.targetSpeed = speed;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "p:%f", &setPosKp) == 1) {
+          motor_1.posPID.proportion = setPosKp;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "i:%f", &setPosKi) == 1) {
+          motor_1.posPID.integral = setPosKi;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "d:%f", &setPosKd) == 1) {
+          motor_1.posPID.derivative = setPosKd;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "p:%f", &setSpdKp) == 1) {
+          motor_1.spdPID.proportion = setSpdKp;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "i:%f", &setSpdKi) == 1) {
+          motor_1.spdPID.integral = setSpdKi;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "d:%f", &setSpdKd) == 1) {
+          motor_1.spdPID.derivative = setSpdKd;
         } else if (controlWord == '?') {
           printf(
               "PID "
@@ -486,9 +500,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   }
 }
 
-void Motor_POS_PID_20Hz(void) { Motor_Pos_PID_Run(&motor_1); }
+void Motor_Pos_PID_20Hz(void) {
+  static uint8_t cnt = 0;
+  cnt = !cnt;
+  if (cnt) {
+    printf("M1:%ld,%f,%f", motor_1.pos, motor_1.speed,
+           (float)__HAL_TIM_GET_COMPARE(&htim7, TIM_CHANNEL_1) /
+               10.0);  //输出位置，转速，PWM占空比
+  }
+  Motor_Pos_PID_Run(&motor_1);
+}
 
-void Motor_Spd_PID_40Hz(void) { Motor_Spd_PID_Run(&motor_1); }
+void Motor_Spd_PID_40Hz(void) {
+  static uint8_t cnt = 0;
+  cnt = !cnt;
+  RGB(0, 0, cnt);
+  Motor_Spd_PID_Run(&motor_1);
+}
 
 /* USER CODE END 4 */
 

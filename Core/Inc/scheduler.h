@@ -19,7 +19,8 @@
 #define KEY_READ_TASK_ID 2
 #define KEY_CHECK_TASK_ID 3
 #define ADC_READ_TASK_ID 4
-#define MOTOR_PID_TASK_ID 5
+#define MOTOR_POS_PID_TASK_ID 5
+#define MOTOR_SPD_PID_TASK_ID 6
 
 #define SCH_TASK_COUNT  sizeof(schTaskList) / sizeof(scheduler_task_t)
 // typedef
@@ -37,8 +38,8 @@ __weak void Uart_Overtime_100Hz(void);
 __weak void Key_Read_100Hz(void);
 __weak void Key_Check_1000Hz(void);
 __weak void ADC_Read_50Hz(void);
-__weak void Motor_POS_PID_20Hz(void);
-__weak void Motor_SPD_PID_40Hz(void);
+__weak void Motor_Pos_PID_20Hz(void);
+__weak void Motor_Spd_PID_40Hz(void);
 
 void Scheduler_Init(void);
 void Scheduler_Run(void);

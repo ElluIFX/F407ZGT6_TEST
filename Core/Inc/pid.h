@@ -15,13 +15,14 @@
 
 /****************** 常量定义 ******************/
 //电机参数相关
-#define SPEED_RATIO 30         //齿轮组减速比
-#define ENCODER_RESOLUTION 13  //编码器线数
+#define SPEED_RATIO 9.6f          //齿轮组减速比
+#define ENCODER_RESOLUTION 13.0f  //编码器线数
 #define PULSE_PER_ROTATION \
   (ENCODER_RESOLUTION * SPEED_RATIO)  //每圈编码器脉冲数
 #define WHEEL_PERIMETER 0.065f        //轮子周长（m）
 #define SPEED_PWM_RATIO 20  // 电机转速与PWM输出换算比例（空载）
-#define PULSE_PER_METER (PULSE_PER_ROTATION / WHEEL_PERIMETER)  //每米脉冲数
+#define PULSE_PER_METER \
+  (uint32_t)((float)PULSE_PER_ROTATION / WHEEL_PERIMETER)  //每米脉冲数
 
 //功能相关
 #define COUNTER_NEUTRAL_POSITION 1073741824  //计数器中位点
@@ -102,33 +103,55 @@ typedef struct {                  //电机闭环控制结构体
 
 /****************** 带参宏定义 ******************/
 
-// 设置速度（前提是没使能位置环）
+// 设置速度环速度（前提是没使能位置环）
 #define __MOTOR_SET_SPEED(motor, speed) motor.spdPID.setpoint = speed
+
 //前进一定脉冲数（使能位置环）
 #define __MOTOR_GO_POS(motor, pos) motor.posPID.setPoint += pos
+
+//按角度前进(使能位置环)
+#define __MOTOR_GO_DEGREE(motor, degree) \
+  motor.posPID.setPoint += degree / 360.0 * PULSE_PER_ROTATION
+
 //按米前进（使能位置环）
 #define __MOTOR_GO_METER(motor, meter) \
   motor.posPID.setPoint += meter * PULSE_PER_METER
-//停止（会越过32的PWM刹车功能）
+
+//停止（会使能32的PWM刹车功能（大概？））
+#define __MOTOR_SETZERO(motor)                                \
+  \HAL_TIM_SetCompare(motor.timPWM, motor.forwardChannel, 0); \
+  \HAL_TIM_SetCompare(motor.timPWM, motor.reverseChannel, 0)
+
+//输出停止（会越过32的PWM刹车功能）
 #define __MOTOR_STOP(motor) \
   HAL_TIM_PWM_Stop(motor.timPWM, motor.forwardChannel || motor.reverseChannel)
-//启动
+
+//输出启动
 #define __MOTOR_START(motor) \
   HAL_TIM_PWM_Start(motor.timPWM, motor.forwardChannel || motor.reverseChannel)
+
+//以当前状态重置位置环中立位
+#define __MOTOR_RESET_ENCODER(motor)                                 \
+  __HAL_TIM_SET_COUNTER(motor.timEncoder, COUNTER_NEUTRAL_POSITION); \
+  motor.lastPos = COUNTER_NEUTRAL_POSITION;                          \
+  motor.pos = COUNTER_NEUTRAL_POSITION;
+
+//清空任意类型PID的误差
+#define __CLEAR_PID_ERROR(motor, pid) \
+  pid.sumError = 0;                   \
+  pid.error_1 = 0;                    \
+  pid.error_2 = 0;
 
 /****************** 函数声明 ******************/
 
 float Inc_PID_Calc(inc_pid_t *PIDx, float NextPoint);
 void Inc_PID_Param_Init(inc_pid_t *);
-void Inc_PID_Clear(inc_pid_t *PIDx);
 
 float Spd_PID_Calc(spd_pid_t *PIDx, float NextPoint);
 void Spd_PID_Param_Init(spd_pid_t *);
-void Spd_PID_Clear(spd_pid_t *PIDx);
 
 float Pos_PID_Calc(pos_pid_t *PIDx, int32_t NextPoint);
 void Pos_PID_Param_Init(pos_pid_t *);
-void Pos_PID_Clear(pos_pid_t *PIDx);
 
 void Motor_Setup(motor_t *motor, TIM_HandleTypeDef *timEncoder,
                  TIM_HandleTypeDef *timPWM, uint32_t forwardChannel,
