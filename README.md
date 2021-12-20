@@ -13,12 +13,13 @@
 > 2. Inc
 >       - 包含上述对应封装的必须参量、结构体和一些带参宏
 > ---
+***
 
-
-## **下面是第一次写markdown，拿来练手的东西**   
+## *下面是第一次写markdown，拿来练手的东西*   
+***
 ## 关于PID
 
-常见的位置套速度环，加了点方便的宏
+常见的位置套速度环，加了点方便的宏  
 
 ### PID移植
 1. #include "pid.h"
@@ -28,7 +29,7 @@
 5. 开PID调度事件，分别调用Motor_Pos_PID_Run和Motor_Spd_PID_Run，速度环频率最好是位置环的两倍以上，避免速度震荡。
 6. 不想用位置环直接不管它就行
 7. 没了
-
+***
 ## 关于Printf重定向
 如果重定向完卡sys某个函数里，调试反而有输出，那就是没干掉半主机模式
 
@@ -56,6 +57,7 @@ int _write(int fd, char *ch, int len) {
 }
 // END 重定向printf
 ```
+***
 ## 关于Printf输出浮点为空的问题
 STM32的标准流浮点输出默认不使能，需要在编译参数中指定软件浮点或是硬件浮点才能使能转换，F4刚好有硬件DFU，跑浮点比软件快很多
 
@@ -67,3 +69,34 @@ CFLAGS  += -mfloat-abi=hard
 LDFLAGS += -u _printf_float -u _scanf_float
 ```
 >keil可以在Target->C/C++->Options->Floating-point->Floating-point model里开启浮点
+***
+
+## 关于Makefile烧录和调试环境
+Makefile里加入操作如下
+```makefile
+clean:
+	@del /Q $(BUILD_DIR)
+	@echo CLEAN Done
+flash:
+	@make & openocd -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	@echo FLASH Done
+erase:
+	@openocd -f ./openocd.cfg -c "init;halt;reset halt;flash erase_address 0x08000000 0x20000;shutdown;"
+	@echo ERASE Done
+usbflash:
+	@make & STM32_Programmer_CLI -c port=usb1 -w "$(BUILD_DIR)/$(TARGET).bin" 0x08000000 -v -g 0x08000000
+	@echo USB FLASH Done
+usberase:
+	@STM32_Programmer_CLI -c port=usb1 -e all
+	@echo ERASE Done
+uartflash:
+	@make & STM32_Programmer_CLI -c port=COM47 -w "$(BUILD_DIR)/$(TARGET).bin" 0x08000000 -v -g 0x08000000
+	@echo UART FLASH Done
+uarterase:
+	@STM32_Programmer_CLI -c port=COM47 -e all
+	@echo ERASE Done
+```
+烧录时直接make flash即可，调试使用OpenOCD，可以挂STlink和CmsisDAP，都很好用
+
+忘记带烧录器也可以跑USB或者串口烧，慢点有限，凑合用
+***
