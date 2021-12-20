@@ -13,14 +13,15 @@
 #include <main.h>
 #include <tim.h>
 
-// constants
+/****************** 常量定义 ******************/
 //电机参数相关
 #define SPEED_RATIO 30         //齿轮组减速比
 #define ENCODER_RESOLUTION 13  //编码器线数
 #define PULSE_PER_ROTATION \
   (ENCODER_RESOLUTION * SPEED_RATIO)  //每圈编码器脉冲数
-#define WHEEL_PERIMETER 0.065         //轮子周长
+#define WHEEL_PERIMETER 0.065f        //轮子周长（m）
 #define SPEED_PWM_RATIO 20  // 电机转速与PWM输出换算比例（空载）
+#define PULSE_PER_METER (PULSE_PER_ROTATION / WHEEL_PERIMETER)  //每米脉冲数
 
 //功能相关
 #define COUNTER_NEUTRAL_POSITION 1073741824  //计数器中位点
@@ -49,7 +50,7 @@
 #define POS_INIT_TARGET COUNTER_NEUTRAL_POSITION  // 初始目标位置
 #define POS_INIT_TARGET_SPEED 100.0f              // 初始目标速度
 
-// typedef
+/****************** 数据类型定义 ******************/
 
 typedef struct {          //增量式PID结构体
   __IO float setPoint;    //设定目标
@@ -99,15 +100,23 @@ typedef struct {                  //电机闭环控制结构体
   uint32_t reverseChannel;        //反向通道
 } motor_t;
 
-// define function
+/****************** 带参宏定义 ******************/
+
+// 设置速度（前提是没使能位置环）
 #define __MOTOR_SET_SPEED(motor, speed) motor.spdPID.setpoint = speed
+//前进一定脉冲数（使能位置环）
 #define __MOTOR_GO_POS(motor, pos) motor.posPID.setPoint += pos
+//按米前进（使能位置环）
+#define __MOTOR_GO_METER(motor, meter) \
+  motor.posPID.setPoint += meter * PULSE_PER_METER
+//停止（会越过32的PWM刹车功能）
 #define __MOTOR_STOP(motor) \
   HAL_TIM_PWM_Stop(motor.timPWM, motor.forwardChannel || motor.reverseChannel)
+//启动
 #define __MOTOR_START(motor) \
   HAL_TIM_PWM_Start(motor.timPWM, motor.forwardChannel || motor.reverseChannel)
 
-// function prototypes
+/****************** 函数声明 ******************/
 
 float Inc_PID_Calc(inc_pid_t *PIDx, float NextPoint);
 void Inc_PID_Param_Init(inc_pid_t *);
