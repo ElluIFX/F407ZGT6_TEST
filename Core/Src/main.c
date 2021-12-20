@@ -479,20 +479,16 @@ void PWM_Cfg_HighFreqAcc(TIM_HandleTypeDef *htim, uint32_t channel,
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   static uint8_t cnt = 0;
-  if (htim == &htim7) {
+  if (htim == &htim7) {  // 50Hz,20ms,用于精确读取转速
     cnt = !cnt;
     RGB(cnt, 0, 0);
     Motor_Get_Speed(&motor_1, 50);
   }
 }
 
-void Motor_POS_PID_20Hz(void) {
-  Motor_Pos_PID_Run(&motor_1);
-}
+void Motor_POS_PID_20Hz(void) { Motor_Pos_PID_Run(&motor_1); }
 
-void Motor_Spd_PID_40Hz(void) {
-  Motor_Spd_PID_Run(&motor_1);
-}
+void Motor_Spd_PID_40Hz(void) { Motor_Spd_PID_Run(&motor_1); }
 
 /* USER CODE END 4 */
 

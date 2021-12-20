@@ -1,6 +1,6 @@
 /**
  * @file uartPack.h
- * @brief UART functions
+ * @brief see uartPack.c for details.
  * @author Ellu (lutaoyu@163.com)
  * @version 1.0
  * @date 2021-12-19
@@ -12,7 +12,7 @@
 #define _UART_PACK_H_
 #include "main.h"
 // private define
-#define _REDIRECT_UART_PORT huart1
+#define _REDIRECT_UART_PORT huart1 //重定向串口目标
 
 // constants
 #define RX_BUFFER_SIZE 128

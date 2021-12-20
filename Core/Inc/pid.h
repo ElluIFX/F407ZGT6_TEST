@@ -1,8 +1,8 @@
 /**
  * @file pid.h
- * @brief PID controller
+ * @brief See pid.c for details.
  * @author Ellu (lutaoyu@163.com)
- * @version 1.0
+ * @version 2.0
  * @date 2021-12-18
  *
  * THINK DIFFERENTLY
@@ -12,9 +12,10 @@
 #define PID_H
 #include <main.h>
 #include <tim.h>
+
 // constants
 //电机参数相关
-#define SPEED_RATIO 30         //减速比
+#define SPEED_RATIO 30         //齿轮组减速比
 #define ENCODER_RESOLUTION 13  //编码器线数
 #define PULSE_PER_ROTATION \
   (ENCODER_RESOLUTION * SPEED_RATIO)  //每圈编码器脉冲数
@@ -98,6 +99,14 @@ typedef struct {                  //电机闭环控制结构体
   uint32_t reverseChannel;        //反向通道
 } motor_t;
 
+// define function
+#define __MOTOR_SET_SPEED(motor, speed) motor.spdPID.setpoint = speed
+#define __MOTOR_GO_POS(motor, pos) motor.posPID.setPoint += pos
+#define __MOTOR_STOP(motor) \
+  HAL_TIM_PWM_Stop(motor.timPWM, motor.forwardChannel || motor.reverseChannel)
+#define __MOTOR_START(motor) \
+  HAL_TIM_PWM_Start(motor.timPWM, motor.forwardChannel || motor.reverseChannel)
+
 // function prototypes
 
 float Inc_PID_Calc(inc_pid_t *PIDx, float NextPoint);
@@ -118,4 +127,5 @@ void Motor_Setup(motor_t *motor, TIM_HandleTypeDef *timEncoder,
 void Motor_Get_Speed(motor_t *motor, float runTimeHz);
 void Motor_Pos_PID_Run(motor_t *motor);
 void Motor_Spd_PID_Run(motor_t *motor);
-#endif
+
+#endif  // __MOTOR_H

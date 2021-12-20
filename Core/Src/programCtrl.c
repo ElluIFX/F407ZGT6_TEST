@@ -1,6 +1,6 @@
 /**
  * @file programCtrl.c
- * @brief program control functions
+ * @brief 顺序执行程序控制器，控制程序的执行顺序，以及程序的暂停和恢复
  * @author Ellu (lutaoyu@163.com)
  * @version 1.0
  * @date 2021-12-13

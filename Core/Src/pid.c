@@ -1,8 +1,9 @@
 /**
  * @file pid.c
- * @brief PID control functions
+ * @brief PID控制器，目前整合了位置PID和速度PID，以及一个没啥用的增量式PID，
+ * 封装了电机控制函数，包括编码器读速度和读角度，需要根据实际情况修改的参量都在pid.h里面
  * @author Ellu (lutaoyu@163.com)
- * @version 1.0
+ * @version 2.0
  * @date 2021-12-18
  *
  * THINK DIFFERENTLY

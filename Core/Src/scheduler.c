@@ -1,5 +1,7 @@
 /**
  * @file scheduler.c
+ * @brief 时分调度器，目前基本使用__weak修饰，以便在其他文件中可以重写（不用考虑头文件问题）
+ * 后续直接整合，使用static修饰提高重入效率
  * @author Ellu (lutaoyu@163.com)
  * @version 1.0
  * @date 2021-12-11
