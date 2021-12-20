@@ -38,11 +38,11 @@ BUILD_DIR = build
 C_SOURCES =  \
 Core/Src/main.c \
 Core/Src/gpio.c \
-Core/Src/key.c \
-Core/Src/pid.c \
-Core/Src/uartPack.c \
-Core/Src/programCtrl.c \
-Core/Src/scheduler.c \
+Modules/key.c \
+Modules/pid.c \
+Modules/uartPack.c \
+Modules/programCtrl.c \
+Modules/scheduler.c \
 Core/Src/usart.c \
 Core/Src/stm32f4xx_it.c \
 Core/Src/stm32f4xx_hal_msp.c \
@@ -128,6 +128,7 @@ AS_INCLUDES =
 # C includes
 C_INCLUDES =  \
 -ICore/Inc \
+-IModules \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \

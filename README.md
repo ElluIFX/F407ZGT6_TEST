@@ -2,18 +2,15 @@
 ## What's this
 本项目用于测试基地任务的F407ZGT6板子各项功能，测试项目全写在main.c里，正在逐步将新增功能拆成别的模块文件，方便移植
 ## 文件结构
-> ---
-> 1. Src
->       - main.c 主程序
+> 	- /Modules 模块文件
 >       - key.c 封装多功能按键处理 [作者：霍宏鹏](https://blog.csdn.net/huohongpeng/article/details/60118467)
 >       - uartPack.c 封装串口通信函数
 >       - schduler.c 封装时分调度器
 >       - programCtrl.c 封装用户任务控制
 >       - pid.c 封装PID算法与电机闭环控制相关
-> 2. Inc
->       - 包含上述对应封装的必须参量、结构体和一些带参宏
-> ---
-***
+>       - *对应的.h文件包含上述对应封装的必须参量、结构体和一些带参宏*
+> 	- /Core/Src 系统核心文件
+>       - main.c 主程序
 
 ## *下面是第一次写markdown，拿来练手的东西*   
 ***
@@ -28,8 +25,8 @@
 4. 开定时中断，调用Motor_Get_Speed定时获取速度（频率大于等于速度环）
 5. 开PID调度事件，分别调用Motor_Pos_PID_Run和Motor_Spd_PID_Run，速度环频率最好是位置环的两倍以上，避免速度震荡。
 6. 不想用位置环直接不管它就行
-7. 没了
-***
+7. 没了  
+
 ## 关于Printf重定向
 如果重定向完卡sys某个函数里，调试反而有输出，那就是没干掉半主机模式
 
@@ -57,7 +54,6 @@ int _write(int fd, char *ch, int len) {
 }
 // END 重定向printf
 ```
-***
 ## 关于Printf输出浮点为空的问题
 STM32的标准流浮点输出默认不使能，需要在编译参数中指定软件浮点或是硬件浮点才能使能转换，F4刚好有硬件DFU，跑浮点比软件快很多
 
@@ -69,7 +65,6 @@ CFLAGS  += -mfloat-abi=hard
 LDFLAGS += -u _printf_float -u _scanf_float
 ```
 >keil可以在Target->C/C++->Options->Floating-point->Floating-point model里开启浮点
-***
 
 ## 关于Makefile烧录和调试环境
 Makefile里加入操作如下
