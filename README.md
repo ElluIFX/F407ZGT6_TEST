@@ -14,6 +14,8 @@
 >       - 包含上述对应封装的必须参量、结构体和一些带参宏
 > ---
 
+
+## **下面是第一次写markdown，拿来练手的东西**   
 ## 关于PID
 
 常见的位置套速度环，加了点方便的宏
@@ -54,3 +56,14 @@ int _write(int fd, char *ch, int len) {
 }
 // END 重定向printf
 ```
+## 关于Printf输出浮点为空的问题
+STM32的标准流浮点输出默认不使能，需要在编译参数中指定软件浮点或是硬件浮点才能使能转换，F4刚好有硬件DFU，跑浮点比软件快很多
+
+用ssprint也没用，当然可以用微库，但如果不想用的话，可以用下面的方法
+
+以Makefile为例，编译参数如下
+```makefile
+CFLAGS  += -mfloat-abi=hard
+LDFLAGS += -u _printf_float -u _scanf_float
+```
+>keil可以在Target->C/C++->Options->Floating-point->Floating-point model里开启浮点
