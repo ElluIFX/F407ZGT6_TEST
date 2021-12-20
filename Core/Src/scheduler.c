@@ -13,9 +13,13 @@
 
 // task lists
 static scheduler_task_t schTaskList[] = {
-    {Uart_Controller_20Hz, 20, 0, 0, 1}, {Uart_Overtime_100Hz, 100, 0, 0, 1},
-    {Key_Read_100Hz, 100, 0, 0, 0},      {Key_Check_1000Hz, 1000, 0, 0, 0},
-    {ADC_Read_50Hz, 50, 0, 0, 0},        {Motor_PID_40Hz, 40, 0, 0, 0},
+    {Uart_Controller_20Hz, 20, 0, 0, 1},
+    {Uart_Overtime_100Hz, 100, 0, 0, 1},
+    {Key_Read_100Hz, 100, 0, 0, 0},
+    {Key_Check_1000Hz, 1000, 0, 0, 0},
+    {ADC_Read_50Hz, 50, 0, 0, 0},
+    {Motor_POS_PID_20Hz, 20, 0, 0, 0},
+    {Motor_SPD_PID_40Hz, 40, 0, 0, 0}
 #ifdef _ENABLE_SCH_DEBUG
     {Show_Sch_Debug_info, 0.2, 0, 0, 1},
 #endif
@@ -26,7 +30,8 @@ __weak void Uart_Overtime_100Hz(void) { return; }
 __weak void Key_Read_100Hz(void) { return; }
 __weak void Key_Check_1000Hz(void) { return; }
 __weak void ADC_Read_50Hz(void) { return; }
-__weak void Motor_PID_40Hz(void) { return; }
+__weak void Motor_POS_PID_20Hz(void) { return; }
+__weak void Motor_SPD_PID_40Hz(void) { return; }
 
 // @note !redefined in main.c
 
@@ -122,7 +127,8 @@ void Show_Sch_Debug_info(void) {
     if (i == 0) {
       sprintf(str_buf, "\r\n>>DEBUG INFO:\r\n");
     }
-    sprintf(str_buf, "%sTask %d: %ldms\r\n", str_buf, i, _sch_debug_task_consuming[i]);
+    sprintf(str_buf, "%sTask %d: %ldms\r\n", str_buf, i,
+            _sch_debug_task_consuming[i]);
   }
   printf("%s<<\r\n", str_buf);
 }

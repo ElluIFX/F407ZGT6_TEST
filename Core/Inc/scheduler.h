@@ -37,7 +37,8 @@ __weak void Uart_Overtime_100Hz(void);
 __weak void Key_Read_100Hz(void);
 __weak void Key_Check_1000Hz(void);
 __weak void ADC_Read_50Hz(void);
-__weak void Motor_PID_40Hz(void);
+__weak void Motor_POS_PID_20Hz(void);
+__weak void Motor_SPD_PID_40Hz(void);
 
 void Scheduler_Init(void);
 void Scheduler_Run(void);

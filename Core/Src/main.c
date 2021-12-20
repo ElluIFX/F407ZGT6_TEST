@@ -48,8 +48,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define SPEEDRATIO 30
-#define ENCODER_RESOLUTION 13
 
 /* USER CODE END PM */
 
@@ -57,9 +55,8 @@
 
 /* USER CODE BEGIN PV */
 uart_o_ctrl_t uart_1;
-__IO float motor1Spd = 0;
 unsigned short keyValue;
-inc_pid_t PID1;
+motor_t motor_1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,6 +112,7 @@ int main(void) {
   /* USER CODE BEGIN 2 */
   Scheduler_Init();  // initialize scheduler
   Enable_Uart_O_Control(&huart1, &uart_1);
+  Motor_Setup(&motor_1, &htim5, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -234,12 +232,6 @@ void Uart_Controller_20Hz(void) {
             printf(
                 "\r\n>>Motor control started\r\n>>Target: MOTOR_1 ENC_3\r\n");
             HAL_Delay(1000);
-            HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-            HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_1);
-            HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_2);
-            HAL_TIM_Base_Start_IT(&htim7);
-            Inc_PID_Param_Init(&PID1);
-            PID1.setPoint = 200;
             Enable_SchTask(MOTOR_PID_TASK_ID);
             break;
           case '2':
@@ -286,18 +278,18 @@ void Uart_Controller_20Hz(void) {
           break;
         }
         if (sscanf((char *)uart_1.rxSaveBuf, "s:%hd", &speed) == 1) {
-          PID1.setPoint = speed;
         } else if (sscanf((char *)uart_1.rxSaveBuf, "f:%hd", &pFreq) == 1) {
-          Set_SchTask_Freq(MOTOR_PID_TASK_ID, pFreq);
         } else if (sscanf((char *)uart_1.rxSaveBuf, "p:%f", &setKp) == 1) {
-          PID1.Kp = setKp;
         } else if (sscanf((char *)uart_1.rxSaveBuf, "i:%f", &setKi) == 1) {
-          PID1.integral = setKi;
         } else if (sscanf((char *)uart_1.rxSaveBuf, "d:%f", &setKd) == 1) {
-          PID1.derivative = setKd;
         } else if (controlWord == '?') {
-          printf("PID Param:Kp=%.3f,Ki=%.3f,Kd=%.3f\r\n", PID1.Kp,
-                 PID1.integral, PID1.derivative);
+          printf(
+              "PID "
+              "Param:\r\nPOS:Kp=%.3f,Ki=%.3f,Kd=%.3f\r\nSPD:Kp=%.3f,Ki=%.3f,Kd="
+              "%.3f\r\n",
+              motor_1.posPID.proportion, motor_1.posPID.integral,
+              motor_1.posPID.derivative, motor_1.spdPID.proportion,
+              motor_1.spdPID.integral, motor_1.spdPID.derivative);
           HAL_Delay(1000);
         } else {
           printf("\r\n>>Invalid command\r\n");
@@ -490,24 +482,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   if (htim == &htim7) {
     cnt = !cnt;
     RGB(cnt, 0, 0);
-    motor1Spd = ((float)((short)__HAL_TIM_GET_COUNTER(&htim5)) * 3000.0f /
-                 ENCODER_RESOLUTION / SPEEDRATIO);
-    __HAL_TIM_SET_COUNTER(&htim5, 0);
+    Motor_Get_Speed(&motor_1, 50);
   }
 }
 
-void Motor_PID_40Hz(void) {
-  static uint8_t cnt = 0;
-  static float pwm1Duty;
-  static uint32_t counter = 0;
-  counter++;
-  cnt = !cnt;
-  RGB(0, 0, cnt);
-  PID1.sumError += Inc_PID_Calc(&PID1, motor1Spd);         //计算PID增量
-  if (PID1.sumError > 100 * 20) PID1.sumError = 100 * 20;  // pwm限幅
-  pwm1Duty = PID1.sumError / 20.0;  //换算为pwm占空比
-  PWM_Cfg_HighDutyAcc(&htim1, TIM_CHANNEL_1, 20000, pwm1Duty);
-  if (counter % 2 == 0) printf("M1:%f,%f\r\n", motor1Spd, pwm1Duty);
+void Motor_POS_PID_20Hz(void) {
+  Motor_Pos_PID_Run(&motor_1);
+}
+
+void Motor_Spd_PID_40Hz(void) {
+  Motor_Spd_PID_Run(&motor_1);
 }
 
 /* USER CODE END 4 */
