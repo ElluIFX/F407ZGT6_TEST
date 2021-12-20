@@ -20,12 +20,12 @@
 #define PULSE_PER_ROTATION \
   (ENCODER_RESOLUTION * SPEED_RATIO)  //每圈编码器脉冲数
 #define WHEEL_PERIMETER 0.065f        //轮子周长（m）
-#define SPEED_PWM_RATIO 20  // 电机转速与PWM输出换算比例（空载）
+#define SPEED_PWM_RATIO 20.0f  // 电机转速与PWM输出换算比例（空载）
 #define PULSE_PER_METER \
-  (uint32_t)((float)PULSE_PER_ROTATION / WHEEL_PERIMETER)  //每米脉冲数
+  ((float)PULSE_PER_ROTATION / WHEEL_PERIMETER)  //每米脉冲数
 
 //功能相关
-#define COUNTER_NEUTRAL_POSITION 1073741824  //计数器中位点
+#define COUNTER_NEUTRAL_POSITION 1073741824  //计数器中位点(2^30)
 #define MOTOR_PWM_FREQ 20000                 //电机PWM频率
 
 //增量式PID
@@ -35,10 +35,10 @@
 #define INC_MAX_INC 0.0f  // 单周期最大增量
 
 //速度环PID
-#define SPD_KP 50.0f               // 比例项系数
-#define SPD_KI 8.5f                // 积分项系数
+#define SPD_KP 12.0f               // 比例项系数
+#define SPD_KI 0.4f                // 积分项系数
 #define SPD_KD 0.0f                // 微分项系数
-#define SPD_DEAD_BAND 0.2f         // 死区
+#define SPD_DEAD_BAND 0.2f         // 速度死区
 #define SPD_MAX_I_Multipler 10.0f  // 积分上限乘子
 #define SPD_INIT_TARGET 0.0f       // 初始目标速度
 
@@ -46,7 +46,7 @@
 #define POS_KP 0.01f                              // 比例项系数
 #define POS_KI 0.0f                               // 积分项系数
 #define POS_KD 0.08f                              // 微分项系数
-#define POS_DEAD_BAND 50l                         // 死区
+#define POS_DEAD_BAND 25l                         // 位置死区
 #define POS_MAX_I 1000l                           // 积分上限
 #define POS_INIT_TARGET COUNTER_NEUTRAL_POSITION  // 初始目标位置
 #define POS_INIT_TARGET_SPEED 100.0f              // 初始目标速度
@@ -94,7 +94,7 @@ typedef struct {                  //电机闭环控制结构体
   uint32_t lastPos;               //上一次位置
   spd_pid_t spdPID;               //速度环PID
   pos_pid_t posPID;               //位置环PID
-  float targetSpeed;              //位置环-速度环目标速度
+  float targetSpeed;              //位置环目标速度
   TIM_HandleTypeDef *timEncoder;  //编码器定时器
   TIM_HandleTypeDef *timPWM;      // PWM定时器
   uint32_t forwardChannel;        //正向通道
@@ -144,11 +144,16 @@ typedef struct {                  //电机闭环控制结构体
   motor.lastPos = COUNTER_NEUTRAL_POSITION;                          \
   motor.pos = COUNTER_NEUTRAL_POSITION;
 
-//清空任意类型PID的误差
+//清空任意类型PID的误差累计
 #define __CLEAR_PID_ERROR(motor, pid) \
   pid.sumError = 0;                   \
   pid.error_1 = 0;                    \
   pid.error_2 = 0;
+
+//清空双环PID的误差累计
+#define __CLEAR_ALL_PID_ERROR(motor)      \
+  __CLEAR_PID_ERROR(motor, motor.spdPID); \
+  __CLEAR_PID_ERROR(motor, motor.posPID);
 
 /****************** 函数声明 ******************/
 
