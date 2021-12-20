@@ -284,17 +284,17 @@ void Uart_Controller_20Hz(void) {
         }
         if (sscanf((char *)uart_1.rxSaveBuf, "s:%f", &speed) == 1) {
           motor_1.targetSpeed = speed;
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "p:%f", &setPosKp) == 1) {
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "pp:%f", &setPosKp) == 1) {
           motor_1.posPID.proportion = setPosKp;
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "i:%f", &setPosKi) == 1) {
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "pi:%f", &setPosKi) == 1) {
           motor_1.posPID.integral = setPosKi;
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "d:%f", &setPosKd) == 1) {
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "pd:%f", &setPosKd) == 1) {
           motor_1.posPID.derivative = setPosKd;
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "p:%f", &setSpdKp) == 1) {
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "sp:%f", &setSpdKp) == 1) {
           motor_1.spdPID.proportion = setSpdKp;
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "i:%f", &setSpdKi) == 1) {
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "si:%f", &setSpdKi) == 1) {
           motor_1.spdPID.integral = setSpdKi;
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "d:%f", &setSpdKd) == 1) {
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "sd:%f", &setSpdKd) == 1) {
           motor_1.spdPID.derivative = setSpdKd;
         } else if (controlWord == '?') {
           printf(

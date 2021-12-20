@@ -106,8 +106,16 @@ typedef struct {                  //电机闭环控制结构体
 // 设置速度环速度（前提是没使能位置环）
 #define __MOTOR_SET_SPEED(motor, speed) motor.spdPID.setpoint = speed
 
+// 设置位置环位置（以中立位为基准）
+#define __MOTOR_SET_POS(motor, pos) \
+  motor.posPID.setPoint = COUNTER_NEUTRAL_POSITION + pos
+
 //前进一定脉冲数（使能位置环）
 #define __MOTOR_GO_POS(motor, pos) motor.posPID.setPoint += pos
+
+// 设置位置环角度（以中立位为基准）
+#define __MOTOR_SET_DEGREE(motor, degree) \
+  __MOTOR_SET_POS(motor, degree / 360.0 * PULSE_PER_ROTATION)
 
 //按角度前进(使能位置环)
 #define __MOTOR_GO_DEGREE(motor, degree) \
