@@ -47,11 +47,13 @@ float Pos_PID_Calc(pos_pid_t *PIDx, int32_t nextPoint) {
     /* Proportion */
     output += PIDx->proportion * error_0;
     /* Integral */
-    PIDx->sumError += error_0;
-    if (PIDx->sumError > PIDx->maxI) {
-      PIDx->sumError = PIDx->maxI;
-    } else if (PIDx->sumError < -PIDx->maxI) {
-      PIDx->sumError = -PIDx->maxI;
+    if (error_0 < PIDx->maxI && error_0 > -PIDx->maxI) {
+      PIDx->sumError += error_0;
+      if (PIDx->sumError > PIDx->maxI) {
+        PIDx->sumError = PIDx->maxI;
+      } else if (PIDx->sumError < -PIDx->maxI) {
+        PIDx->sumError = -PIDx->maxI;
+      }
     }
     output += PIDx->integral * PIDx->sumError;
   } else {
