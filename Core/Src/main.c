@@ -66,8 +66,10 @@ inc_pid_t PID1;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void RGB(uint8_t R, uint8_t G, uint8_t B);
-void PWM_Set_Freq_Duty(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t freq,
-                       float duty);
+void PWM_Cfg_HighDutyAcc(TIM_HandleTypeDef *htim, uint32_t channel,
+                         uint32_t freq, float duty);
+void PWM_Cfg_HighFreqAcc(TIM_HandleTypeDef *htim, uint32_t channel,
+                         uint32_t freq, uint16_t duty);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -232,7 +234,6 @@ void Uart_Controller_20Hz(void) {
             printf(
                 "\r\n>>Motor control started\r\n>>Target: MOTOR_1 ENC_3\r\n");
             HAL_Delay(1000);
-            PWM_Set_Freq_Duty(&htim1, TIM_CHANNEL_1, 20000, 60);
             HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
             HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_1);
             HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_2);
@@ -309,12 +310,19 @@ void Uart_Controller_20Hz(void) {
           userMode = 0;
           break;
         }
-        if (sscanf((char *)uart_1.rxSaveBuf, "f:%ld,d:%f", &freq, &duty) != 2) {
+        if (sscanf((char *)uart_1.rxSaveBuf, "hf:%ld,d:%f", &freq, &duty) ==
+            2) {
+          printf("\r\n>>Set Freq(High Acc):%ldHz\r\n>>Set Duty:%f%%\r\n", freq,
+                 duty);
+          PWM_Cfg_HighFreqAcc(&htim8, TIM_CHANNEL_1, freq, duty);
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "f:%ld,hd:%f", &freq,
+                          &duty) == 2) {
+          printf("\r\n>>Set Freq:%ldHz\r\n>>Set Duty(High Acc):%f%%\r\n", freq,
+                 duty);
+          PWM_Cfg_HighDutyAcc(&htim8, TIM_CHANNEL_1, freq, duty);
+        } else {
           printf("\r\n>>Invalid command\r\n");
           break;
-        } else {
-          printf("\r\n>>Set Freq:%ldHz\r\n>>Set Duty:%f%%\r\n", freq, duty);
-          PWM_Set_Freq_Duty(&htim8, TIM_CHANNEL_1, freq, duty);
         }
         break;
       case 3:  // 按键读取
@@ -450,25 +458,31 @@ void ADC_Read_50Hz(void) {
 }
 
 /**
- * @brief Set specified pwm output frequency and duty
+ * @brief Set specified pwm output frequency and duty, high duty ratio accuracy
  * @param  htim             Timer
  * @param  channel          Channel
  * @param  freq             Frequency
  * @param  duty             Duty
  */
-void PWM_Set_Freq_Duty(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t freq,
-                       float duty) {
-  const uint32_t SYSTEM_CLOCK = 168000000;
-  static uint32_t prescaler = 0;
-  static uint32_t period = 0;
-  static uint32_t pulse = 0;
-  prescaler = (SYSTEM_CLOCK / 1000 / freq) - 1;
-  period = 1000 - 1;
-  pulse = duty * 10;
-  __HAL_TIM_SET_PRESCALER(htim, prescaler);
-  __HAL_TIM_SET_AUTORELOAD(htim, period);
-  __HAL_TIM_SET_COMPARE(htim, channel, pulse);
-  return;
+void PWM_Cfg_HighDutyAcc(TIM_HandleTypeDef *htim, uint32_t channel,
+                         uint32_t freq, float duty) {
+  __HAL_TIM_SET_PRESCALER(htim, (SYSTEM_CLOCK_FREQ_HZ / 1000 / freq) - 1);
+  __HAL_TIM_SET_AUTORELOAD(htim, 1000 - 1);
+  __HAL_TIM_SET_COMPARE(htim, channel, duty * 10);
+}
+
+/**
+ * @brief Set specified pwm output frequency and duty, high frequency accuracy
+ * @param  htim             Timer
+ * @param  channel          Channel
+ * @param  freq             Frequency
+ * @param  duty             Duty
+ */
+void PWM_Cfg_HighFreqAcc(TIM_HandleTypeDef *htim, uint32_t channel,
+                         uint32_t freq, uint16_t duty) {
+  __HAL_TIM_SET_PRESCALER(htim, (SYSTEM_CLOCK_FREQ_HZ / 100 / freq) - 1);
+  __HAL_TIM_SET_AUTORELOAD(htim, 100 - 1);
+  __HAL_TIM_SET_COMPARE(htim, channel, duty);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -492,7 +506,7 @@ void Motor_PID_40Hz(void) {
   PID1.sumError += Inc_PID_Calc(&PID1, motor1Spd);         //计算PID增量
   if (PID1.sumError > 100 * 20) PID1.sumError = 100 * 20;  // pwm限幅
   pwm1Duty = PID1.sumError / 20.0;  //换算为pwm占空比
-  PWM_Set_Freq_Duty(&htim1, TIM_CHANNEL_1, 20000, pwm1Duty);
+  PWM_Cfg_HighDutyAcc(&htim1, TIM_CHANNEL_1, 20000, pwm1Duty);
   if (counter % 2 == 0) printf("M1:%f,%f\r\n", motor1Spd, pwm1Duty);
 }
 

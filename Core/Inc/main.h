@@ -42,7 +42,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+#define SYSTEM_CLOCK_FREQ_HZ 168000000
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

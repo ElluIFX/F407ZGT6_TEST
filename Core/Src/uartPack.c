@@ -75,8 +75,10 @@ uint8_t Uart_O_Data_Process(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl) {
     ctrl->rxSaveFlag = 1;
     ctrl->rxFlag = 0;
     ctrl->rxBufIndex = 0;
+    return 1;
   }
   HAL_UART_Receive_IT(huart, ctrl->rxData, 1);
+  return 0;
 }
 
 /**
@@ -115,6 +117,8 @@ uint8_t Uart_E_Data_Process(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl) {
     ctrl->rxSaveFlag = 1;
     ctrl->rxFlag = 0;
     ctrl->rxBufIndex = 0;
+    return 1;
   }
   HAL_UART_Receive_IT(huart, ctrl->rxData, 1);
+  return 0;
 }
