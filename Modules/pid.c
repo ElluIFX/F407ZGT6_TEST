@@ -98,7 +98,7 @@ float Spd_PID_Calc(spd_pid_t *PIDx, float nextPoint) {
   output = 0;
   error_0 = PIDx->setPoint - nextPoint;
   /* Dead band */
-  if (error_0 < PIDx->deadBand || error_0 > -PIDx->deadBand) {
+  if (error_0 < PIDx->deadBand && error_0 > -PIDx->deadBand) {
     error_0 = 0;
   }
   /* Proportion */
@@ -177,6 +177,10 @@ void Motor_Setup(motor_t *motor, TIM_HandleTypeDef *timEncoder,
   motor->forwardChannel = forwardChannel;
   motor->reverseChannel = reverseChannel;
   motor->targetSpeed = POS_INIT_TARGET_SPEED;
+  motor->pwmDuty = 0;
+  motor->speed = 0;
+  motor->pos = COUNTER_NEUTRAL_POSITION;
+  motor->lastPos = COUNTER_NEUTRAL_POSITION;
   HAL_TIM_Encoder_Start(timEncoder, TIM_CHANNEL_ALL);
   __HAL_TIM_SET_COUNTER(timEncoder, COUNTER_NEUTRAL_POSITION);
   __HAL_TIM_SET_PRESCALER(timPWM,
@@ -225,10 +229,11 @@ void Motor_Spd_PID_Run(motor_t *motor) {
   if (pwmDuty < -100) pwmDuty = -100;
   // Set PWM Output
   if (pwmDuty > 0) {
-    __HAL_TIM_SET_COMPARE(motor->timPWM, motor->forwardChannel, pwmDuty);
+    __HAL_TIM_SET_COMPARE(motor->timPWM, motor->forwardChannel, pwmDuty * 10);
     __HAL_TIM_SET_COMPARE(motor->timPWM, motor->reverseChannel, 0);
   } else {
     __HAL_TIM_SET_COMPARE(motor->timPWM, motor->forwardChannel, 0);
-    __HAL_TIM_SET_COMPARE(motor->timPWM, motor->reverseChannel, -pwmDuty);
+    __HAL_TIM_SET_COMPARE(motor->timPWM, motor->reverseChannel, -pwmDuty * 10);
   }
+  motor->pwmDuty = pwmDuty;
 }
