@@ -118,6 +118,7 @@ int main(void) {
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   printf("\r\n--- System running ---\r\n");
+  printf("float: %f\r\n", 3.1415926);
   while (1) {
     Scheduler_Run();   // run scheduler
     User_Task_Ctrl();  // run user task
@@ -206,7 +207,8 @@ void Uart_Overtime_100Hz(void) {
  */
 void Uart_Controller_20Hz(void) {
   static uint8_t userMode = 0;
-  static uint32_t freq = 0;
+  static int goDeg = 0;
+  static int setDeg = 0;
   static float duty = 0;
   static float speed = 0;
   static float setPosKp = 0;
@@ -215,7 +217,6 @@ void Uart_Controller_20Hz(void) {
   static float setSpdKp = 0;
   static float setSpdKi = 0;
   static float setSpdKd = 0;
-  float DACvoltage = 0;
   uint8_t controlWord = 0;
   if (uart_1.rxSaveFlag) {
     uart_1.rxSaveFlag = 0;
@@ -225,60 +226,49 @@ void Uart_Controller_20Hz(void) {
         switch (controlWord) {
           case '?':
             printf(
-                "\r\n-------MENU-------\r\n1:Motor control\r\n2:PWM "
-                "control\r\n3:Key reading\r\n4:LED control\r\n5:User task "
-                "control\r\n6:ADC reading\r\n7:DAC output\r\n ");
+                "\r\n-------MENU-------\r\n1:Pos + Spd PID Control\r\n2:Spd "
+                "PID Control\r\n3:Manual Control\r\n");
             break;
           case '1':
             userMode = 1;
-            printf(
-                "\r\n>>Motor control started\r\n>>Target: MOTOR_1 ENC_3\r\n");
+            printf("\r\n---Pos + Spd PID Control---\r\n");
             HAL_Delay(1000);
-            __MOTOR_RESET_ENCODER(motor_1);  //防止积累误差造成过冲
-            HAL_TIM_Base_Start_IT(&htim7);   //开转速计算
+            __MOTOR_RESET_ENCODER(motor_1);
+            HAL_TIM_Base_Start_IT(&htim7);  //开转速计算
             Enable_SchTask(MOTOR_POS_PID_TASK_ID);
             Enable_SchTask(MOTOR_SPD_PID_TASK_ID);
+            Enable_SchTask(PARAM_REPORT_TASK_ID);
             break;
           case '2':
             userMode = 2;
-            printf("\r\n>>PWM control started\r\n>>Target: MOTOR_3 CHA_1\r\n");
-            HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
+            printf("\r\n---Spd PID Control---\r\n");
+            HAL_Delay(1000);
+            __MOTOR_RESET_ENCODER(motor_1);
+            HAL_TIM_Base_Start_IT(&htim7);  //开转速计算
+            Enable_SchTask(PARAM_REPORT_TASK_ID);
+            Enable_SchTask(MOTOR_SPD_PID_TASK_ID);
             break;
           case '3':
             userMode = 3;
-            printf("\r\n>>Key reading started\r\n");
-            Enable_SchTask(KEY_CHECK_TASK_ID);
-            Enable_SchTask(KEY_READ_TASK_ID);
-            break;
-          case '4':
-            userMode = 4;
-            printf("\r\n>>LED control started\r\n");
-            break;
-          case '5':
-            userMode = 5;
-            printf("\r\n>>User task control started\r\n");
-            break;
-          case '6':
-            userMode = 6;
-            printf("\r\n>>ADC reading started\r\n");
+            printf("\r\n---Manual Control---\r\n");
             HAL_Delay(1000);
-            Enable_SchTask(ADC_READ_TASK_ID);
-            break;
-          case '7':
-            userMode = 7;
-            printf("\r\n>>DAC output started\r\n");
+            __MOTOR_RESET_ENCODER(motor_1);
+            Enable_SchTask(PARAM_REPORT_TASK_ID);
+            HAL_TIM_Base_Start_IT(&htim7);  //开转速计算
             break;
           default:
             printf("\r\n>>Invalid command\r\n");
             break;
         }
         break;
-      case 1:  //电机控制
+      case 1:  //位置PID控制
         if (controlWord == 'e') {
           printf("\r\n>>Motor control exit\r\n");
           HAL_TIM_Base_Stop_IT(&htim7);  //停转速计算
           Disable_SchTask(MOTOR_POS_PID_TASK_ID);
           Disable_SchTask(MOTOR_SPD_PID_TASK_ID);
+          Disable_SchTask(PARAM_REPORT_TASK_ID);
+          __MOTOR_PWM_SETZERO(motor_1);
           userMode = 0;
           break;
         }
@@ -296,6 +286,10 @@ void Uart_Controller_20Hz(void) {
           motor_1.spdPID.integral = setSpdKi;
         } else if (sscanf((char *)uart_1.rxSaveBuf, "sd:%f", &setSpdKd) == 1) {
           motor_1.spdPID.derivative = setSpdKd;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "g:%d", &goDeg) == 1) {
+          __MOTOR_GO_DEGREE(motor_1, goDeg);
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "s:%d", &setDeg) == 1) {
+          __MOTOR_SET_DEGREE(motor_1, setDeg);
         } else if (controlWord == '?') {
           printf(
               "PID "
@@ -309,101 +303,49 @@ void Uart_Controller_20Hz(void) {
           printf("\r\n>>Invalid command\r\n");
         }
         break;
-      case 2:  // PWM控制
+      case 2:  //转速PID控制
         if (controlWord == 'e') {
-          printf("\r\n>>PWM control exit\r\n");
-          HAL_TIM_PWM_Stop(&htim8, TIM_CHANNEL_1);
+          printf("\r\n>>Motor control exit\r\n");
+          HAL_TIM_Base_Stop_IT(&htim7);  //停转速计算
+          Disable_SchTask(MOTOR_SPD_PID_TASK_ID);
+          Disable_SchTask(PARAM_REPORT_TASK_ID);
+          __MOTOR_PWM_SETZERO(motor_1);
           userMode = 0;
           break;
         }
-        if (sscanf((char *)uart_1.rxSaveBuf, "hf:%ld,d:%f", &freq, &duty) ==
-            2) {
-          printf("\r\n>>Set Freq(High Acc):%ldHz\r\n>>Set Duty:%f%%\r\n", freq,
-                 duty);
-          PWM_Cfg_HighFreqAcc(&htim8, TIM_CHANNEL_1, freq, duty);
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "f:%ld,hd:%f", &freq,
-                          &duty) == 2) {
-          printf("\r\n>>Set Freq:%ldHz\r\n>>Set Duty(High Acc):%f%%\r\n", freq,
-                 duty);
-          PWM_Cfg_HighDutyAcc(&htim8, TIM_CHANNEL_1, freq, duty);
+        if (sscanf((char *)uart_1.rxSaveBuf, "s:%f", &speed) == 1) {
+          __MOTOR_SET_SPEED(motor_1, speed);
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "sp:%f", &setSpdKp) == 1) {
+          motor_1.spdPID.proportion = setSpdKp;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "si:%f", &setSpdKi) == 1) {
+          motor_1.spdPID.integral = setSpdKi;
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "sd:%f", &setSpdKd) == 1) {
+          motor_1.spdPID.derivative = setSpdKd;
+        } else if (controlWord == '?') {
+          printf("PID Param:\r\nSPD:Kp=%.3f,Ki=%.3f,Kd=%.3f\r\n",
+                 motor_1.spdPID.proportion, motor_1.spdPID.integral,
+                 motor_1.spdPID.derivative);
+          HAL_Delay(1000);
         } else {
           printf("\r\n>>Invalid command\r\n");
-          break;
         }
         break;
-      case 3:  // 按键读取
+      case 3:  //手动控制
         if (controlWord == 'e') {
-          printf("\r\n>>Key reading exit\r\n");
-          Disable_SchTask(KEY_CHECK_TASK_ID);
-          Disable_SchTask(KEY_READ_TASK_ID);
+          printf("\r\n>>Motor control exit\r\n");
+          HAL_TIM_Base_Stop_IT(&htim7);  //停转速计算
+          Disable_SchTask(PARAM_REPORT_TASK_ID);
+          __MOTOR_PWM_SETZERO(motor_1);
           userMode = 0;
           break;
         }
-        break;
-      case 4:  // LED控制
-        switch (controlWord) {
-          case 'e':
-            printf("\r\n>>LED control exit\r\n");
-            userMode = 0;
-            RGB(0, 0, 0);
-            break;
-          case 's':
-            RGB(uart_1.rxSaveBuf[2] - '0', uart_1.rxSaveBuf[3] - '0',
-                uart_1.rxSaveBuf[4] - '0');
-            break;
-        }
-        break;
-      case 5:  //用户事件控制
-        switch (controlWord) {
-          case 'e':
-            printf("\r\n>>User task control exit\r\n");
-            userMode = 0;
-            break;
-          case '1':
-            user_task_ctrl_word.runFlag = 1;
-            break;
-          case '2':
-            user_task_ctrl_word.runFlag = 0;
-            break;
-          case 'c':
-            user_task_ctrl_word.continueFlag = 1;
-            break;
-          case 'b':
-            user_task_ctrl_word.breakFlag = 1;
-            break;
-          case 'r':
-            Reset_User_Task();
-          case '?':
-            printf("ID:%d RUN:%d DONE:%d \r\n ", user_task_ctrl_word.taskId,
-                   user_task_ctrl_word.taskRunning,
-                   user_task_ctrl_word.taskListDone);
-            if (user_task_ctrl_word.taskListDone)
-              user_task_ctrl_word.taskListDone = 0;  //清除标志位
-            break;
-        }
-        break;
-      case 6:  // ADC读取
-        if (controlWord == 'e') {
-          printf("\r\n>>ADC reading exit\r\n");
-          Disable_SchTask(ADC_READ_TASK_ID);
-          userMode = 0;
-          break;
-        }
-        break;
-      case 7:  // DAC输出
-        if (controlWord == 'e') {
-          printf("\r\n>>DAC output exit\r\n");
-          HAL_DAC_Stop(&hdac, DAC_CHANNEL_1);
-          userMode = 0;
-          break;
-        }
-        if (sscanf((char *)uart_1.rxSaveBuf, "s:%f", &DACvoltage) == 1) {
-          HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R,
-                           (uint32_t)(DACvoltage / 3.3 * 4095));
-          HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-          printf("\r\n>>Set DAC output: %f V\r\n", DACvoltage);
-        } else {
-          printf("\r\n>>Invalid command\r\n");
+        if (sscanf((char *)uart_1.rxSaveBuf, "d:%f", &duty) == 1) {
+          if (duty > 0) {
+            __MOTOR_PWM_SETFWD(motor_1, duty);
+          } else {
+            __MOTOR_PWM_SETREV(motor_1, -duty);
+          }
+          motor_1.pwmDuty = duty;
         }
         break;
     }
@@ -464,7 +406,8 @@ void ADC_Read_50Hz(void) {
 }
 
 /**
- * @brief Set specified pwm output frequency and duty, high duty ratio accuracy
+ * @brief Set specified pwm output frequency and duty, high duty ratio
+ * accuracy
  * @param  htim             Timer
  * @param  channel          Channel
  * @param  freq             Frequency
@@ -478,7 +421,8 @@ void PWM_Cfg_HighDutyAcc(TIM_HandleTypeDef *htim, uint32_t channel,
 }
 
 /**
- * @brief Set specified pwm output frequency and duty, high frequency accuracy
+ * @brief Set specified pwm output frequency and duty, high frequency
+ * accuracy
  * @param  htim             Timer
  * @param  channel          Channel
  * @param  freq             Frequency
@@ -503,11 +447,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 void Motor_Pos_PID_20Hz(void) {
   static uint8_t cnt = 0;
   cnt = !cnt;
-  if (cnt) {
-    printf("M1:%ld,%f,%f", motor_1.pos, motor_1.speed,
-           (float)__HAL_TIM_GET_COMPARE(&htim7, TIM_CHANNEL_1) /
-               10.0);  //输出位置，转速，PWM占空比
-  }
+  RGB(0, cnt, 0);
   Motor_Pos_PID_Run(&motor_1);
 }
 
@@ -518,6 +458,10 @@ void Motor_Spd_PID_40Hz(void) {
   Motor_Spd_PID_Run(&motor_1);
 }
 
+void Param_Report_40Hz(void) {
+  printf("M1:%f,%f,%f\r\n", __MOTOR_GET_DEGREE(motor_1), motor_1.speed,
+         motor_1.pwmDuty);  //输出位置，转速，PWM占空比
+}
 /* USER CODE END 4 */
 
 /**
@@ -526,7 +470,8 @@ void Motor_Spd_PID_40Hz(void) {
  */
 void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+  /* User can add his own implementation to report the HAL error return
+   * state */
   __disable_irq();
   while (1) {
   }
@@ -545,9 +490,11 @@ void assert_failed(uint8_t *file, uint32_t line) {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line
      number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
+     line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF
+ * FILE****/

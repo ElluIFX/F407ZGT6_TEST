@@ -21,6 +21,7 @@
 #define ADC_READ_TASK_ID 4
 #define MOTOR_POS_PID_TASK_ID 5
 #define MOTOR_SPD_PID_TASK_ID 6
+#define PARAM_REPORT_TASK_ID 7
 
 #define SCH_TASK_COUNT  sizeof(schTaskList) / sizeof(scheduler_task_t)
 // typedef
@@ -40,6 +41,7 @@ __weak void Key_Check_1000Hz(void);
 __weak void ADC_Read_50Hz(void);
 __weak void Motor_Pos_PID_20Hz(void);
 __weak void Motor_Spd_PID_40Hz(void);
+__weak void Param_Report_40Hz(void);
 
 void Scheduler_Init(void);
 void Scheduler_Run(void);
