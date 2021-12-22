@@ -15,14 +15,14 @@
 
 /****************** 常量定义 ******************/
 //电机参数相关
-#define SPEED_RATIO 47.0f         //齿轮组减速比
+#define SPEED_RATIO 46.6f         //齿轮组减速比
 #define ENCODER_RESOLUTION 11.0f  //编码器线数
 #define ENCODER_MULTIPLE 2.0f  //编码器倍频（个数*计数方式）（UP）
 #define PULSE_PER_ROTATION \
   (ENCODER_RESOLUTION * SPEED_RATIO * ENCODER_MULTIPLE)  //每圈编码器脉冲数
 #define WHEEL_PERIMETER 0.065f                           //轮子周长（m）
 #define PULSE_PER_METER (PULSE_PER_ROTATION / WHEEL_PERIMETER)  //每米脉冲数
-#define MOTOR_LAUNCH_PWM_DUTY 55.0f  //电机启动PWM占空比
+#define MOTOR_LAUNCH_PWM_DUTY 55.2f  //电机启动PWM占空比
 
 //功能相关
 #define COUNTER_NEUTRAL_POSITION 1073741824l  //计数器中位点(2^30)
@@ -44,11 +44,11 @@
 #define SPD_INIT_TARGET 0.0f        // 初始目标速度
 
 //位置环PID
-#define POS_KP 0.126f                                         // 比例项系数
-#define POS_KI 0.00f                                           // 积分项系数
-#define POS_KD 0.412f                                         // 微分项系数
-#define POS_DEAD_BAND (int32_t)(1.5f * PULSE_PER_ROTATION / 360.0f)  // 位置死区
-#define POS_MAX_I 20000l                                      // 积分上限
+#define POS_KP 0.126f   // 比例项系数
+#define POS_KI 0.0004f  // 积分项系数
+#define POS_KD 0.412f   // 微分项系数
+#define POS_DEAD_BAND (int32_t)(1.0f * PULSE_PER_ROTATION / 360.0f)  // 位置死区
+#define POS_MAX_I 20000l                          // 积分上限
 #define POS_INIT_TARGET COUNTER_NEUTRAL_POSITION  // 初始目标位置
 #define POS_INIT_TARGET_SPEED 110.0f              // 初始目标速度
 
@@ -119,9 +119,9 @@ typedef struct {                  //电机闭环控制结构体
 #define __MOTOR_GO_POS(motor, pos) motor.posPID.setPoint += pos
 
 //设置位置环角度（以中立位为基准）
-#define __MOTOR_SET_DEGREE(motor, degree) \
-  motor.posPID.setPoint =                 \
-      COUNTER_NEUTRAL_POSITION + (int32_t)(degree * PULSE_PER_ROTATION / 360.0f)
+#define __MOTOR_SET_DEGREE(motor, degree)            \
+  motor.posPID.setPoint = COUNTER_NEUTRAL_POSITION + \
+                          (int32_t)(degree * PULSE_PER_ROTATION / 360.0f)
 
 //获取当前角度（以中立位为基准）
 #define __MOTOR_GET_DEGREE(motor) \
