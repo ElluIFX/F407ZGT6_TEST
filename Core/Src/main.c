@@ -312,11 +312,6 @@ void Uart_Controller_20Hz(void) {
           motor_1.spdPID.integral = setSpdKi;
         } else if (sscanf((char *)uart_1.rxSaveBuf, "sd:%f", &setSpdKd) == 1) {
           motor_1.spdPID.derivative = setSpdKd;
-        } else if (controlWord == '?') {
-          printf("PID Param:\r\nSPD:Kp=%.3f,Ki=%.3f,Kd=%.3f\r\n",
-                 motor_1.spdPID.proportion, motor_1.spdPID.integral,
-                 motor_1.spdPID.derivative);
-          HAL_Delay(1000);
         } else {
           printf("\r\n>>Invalid command\r\n");
         }
@@ -446,7 +441,8 @@ void Motor_Spd_PID_40Hz(void) {
 
 void Param_Report_40Hz(void) {
   printf("M1:%f,%f,%f,%ld\r\n", __MOTOR_GET_DEGREE(motor_1), motor_1.speed,
-         motor_1.pwmDuty,__MOTOR_GET_POS(motor_1));  //输出位置，转速，PWM占空比
+         motor_1.pwmDuty,
+         __MOTOR_GET_POS(motor_1));  //输出位置，转速，PWM占空比
 }
 /* USER CODE END 4 */
 
