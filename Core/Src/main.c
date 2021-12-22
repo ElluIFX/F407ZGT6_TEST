@@ -207,8 +207,8 @@ void Uart_Overtime_100Hz(void) {
  */
 void Uart_Controller_20Hz(void) {
   static uint8_t userMode = 0;
-  static int goDeg = 0;
-  static int setDeg = 0;
+  static float goDeg = 0;
+  static float setDeg = 0;
   static float duty = 0;
   static float speed = 0;
   static float setPosKp = 0;
@@ -286,19 +286,10 @@ void Uart_Controller_20Hz(void) {
           motor_1.spdPID.integral = setSpdKi;
         } else if (sscanf((char *)uart_1.rxSaveBuf, "sd:%f", &setSpdKd) == 1) {
           motor_1.spdPID.derivative = setSpdKd;
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "g:%d", &goDeg) == 1) {
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "gdeg:%f", &goDeg) == 1) {
           __MOTOR_GO_DEGREE(motor_1, goDeg);
-        } else if (sscanf((char *)uart_1.rxSaveBuf, "s:%d", &setDeg) == 1) {
+        } else if (sscanf((char *)uart_1.rxSaveBuf, "sdeg:%f", &setDeg) == 1) {
           __MOTOR_SET_DEGREE(motor_1, setDeg);
-        } else if (controlWord == '?') {
-          printf(
-              "PID "
-              "Param:\r\nPOS:Kp=%.3f,Ki=%.3f,Kd=%.3f\r\nSPD:Kp=%.3f,Ki=%.3f,Kd="
-              "%.3f\r\n",
-              motor_1.posPID.proportion, motor_1.posPID.integral,
-              motor_1.posPID.derivative, motor_1.spdPID.proportion,
-              motor_1.spdPID.integral, motor_1.spdPID.derivative);
-          HAL_Delay(1000);
         } else {
           printf("\r\n>>Invalid command\r\n");
         }
@@ -436,31 +427,26 @@ void PWM_Cfg_HighFreqAcc(TIM_HandleTypeDef *htim, uint32_t channel,
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-  static uint8_t cnt = 0;
   if (htim == &htim7) {  // 50Hz,20ms,用于精确读取转速
-    cnt = !cnt;
-    RGB(cnt, 0, 0);
+    HAL_GPIO_TogglePin(LED_R_GPIO_Port, LED_R_Pin);
     Motor_Get_Speed(&motor_1, 50);
   }
 }
 
 void Motor_Pos_PID_20Hz(void) {
-  static uint8_t cnt = 0;
-  cnt = !cnt;
-  RGB(0, cnt, 0);
+  HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
   Motor_Pos_PID_Run(&motor_1);
 }
 
 void Motor_Spd_PID_40Hz(void) {
-  static uint8_t cnt = 0;
-  cnt = !cnt;
-  RGB(0, 0, cnt);
+  HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
+
   Motor_Spd_PID_Run(&motor_1);
 }
 
 void Param_Report_40Hz(void) {
-  printf("M1:%f,%f,%f\r\n", __MOTOR_GET_DEGREE(motor_1), motor_1.speed,
-         motor_1.pwmDuty);  //输出位置，转速，PWM占空比
+  printf("M1:%f,%f,%f,%ld\r\n", __MOTOR_GET_DEGREE(motor_1), motor_1.speed,
+         motor_1.pwmDuty,__MOTOR_GET_POS(motor_1));  //输出位置，转速，PWM占空比
 }
 /* USER CODE END 4 */
 
@@ -496,5 +482,4 @@ void assert_failed(uint8_t *file, uint32_t line) {
 }
 #endif /* USE_FULL_ASSERT */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF
- * FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -105,10 +105,11 @@ float Spd_PID_Calc(spd_pid_t *PIDx, float nextPoint) {
   PIDx->sumError += error_0;
   output += PIDx->proportion * error_0;
   /* Integral */
-  if (PIDx->sumError > PIDx->maxIMult * PIDx->setPoint) {
+  if (PIDx->setPoint >= 0 && PIDx->sumError > PIDx->maxIMult * PIDx->setPoint) {
     PIDx->sumError = PIDx->maxIMult * PIDx->setPoint;
-  } else if (PIDx->sumError < -PIDx->maxIMult * PIDx->setPoint) {
-    PIDx->sumError = -PIDx->maxIMult * PIDx->setPoint;
+  } else if (PIDx->setPoint < 0 &&
+             PIDx->sumError < PIDx->maxIMult * PIDx->setPoint) {
+    PIDx->sumError = PIDx->maxIMult * PIDx->setPoint;
   }
   output += PIDx->integral * PIDx->sumError;
   /* Derivative */
@@ -171,6 +172,7 @@ void Motor_Setup(motor_t *motor, TIM_HandleTypeDef *timEncoder,
                  TIM_HandleTypeDef *timPWM, uint32_t forwardChannel,
                  uint32_t reverseChannel) {
   Pos_PID_Param_Init(&motor->posPID);
+  motor->posPID.setPoint = COUNTER_NEUTRAL_POSITION;
   Spd_PID_Param_Init(&motor->spdPID);
   motor->timEncoder = timEncoder;
   motor->timPWM = timPWM;
@@ -200,7 +202,7 @@ void Motor_Setup(motor_t *motor, TIM_HandleTypeDef *timEncoder,
 void Motor_Get_Speed(motor_t *motor, float runTimeHz) {
   motor->pos = __HAL_TIM_GET_COUNTER(motor->timEncoder);
   motor->speed = (float)(motor->pos - motor->lastPos) * 60.0f * runTimeHz /
-                 ENCODER_RESOLUTION / SPEED_RATIO;
+                 PULSE_PER_ROTATION;
   motor->lastPos = motor->pos;
 }
 
@@ -224,11 +226,17 @@ void Motor_Pos_PID_Run(motor_t *motor) {
  * @param  motor            Target
  */
 void Motor_Spd_PID_Run(motor_t *motor) {
-  float pwmDuty = Spd_PID_Calc(&motor->spdPID, motor->speed) / SPEED_PWM_RATIO;
+  float pwmDuty = Spd_PID_Calc(&motor->spdPID, motor->speed);
+  if (pwmDuty > 0)
+    pwmDuty += MOTOR_LAUNCH_PWM_DUTY;
+  else if (pwmDuty < 0)
+    pwmDuty -= MOTOR_LAUNCH_PWM_DUTY;
+  else
+    pwmDuty = 0;
   if (pwmDuty > 100) pwmDuty = 100;
   if (pwmDuty < -100) pwmDuty = -100;
   // Set PWM Output
-  if (pwmDuty > 0) {
+  if (pwmDuty >= 0) {
     __HAL_TIM_SET_COMPARE(motor->timPWM, motor->forwardChannel, pwmDuty * 10);
     __HAL_TIM_SET_COMPARE(motor->timPWM, motor->reverseChannel, 0);
   } else {
