@@ -44,13 +44,13 @@
 #define SPD_INIT_TARGET 0.0f        // 初始目标速度
 
 //位置环PID
-#define POS_KP 0.186f                                         // 比例项系数
+#define POS_KP 0.126f                                         // 比例项系数
 #define POS_KI 0.00f                                           // 积分项系数
-#define POS_KD 0.185f                                         // 微分项系数
+#define POS_KD 0.412f                                         // 微分项系数
 #define POS_DEAD_BAND (int32_t)(1.5f * PULSE_PER_ROTATION / 360.0f)  // 位置死区
 #define POS_MAX_I 20000l                                      // 积分上限
 #define POS_INIT_TARGET COUNTER_NEUTRAL_POSITION  // 初始目标位置
-#define POS_INIT_TARGET_SPEED 100.0f              // 初始目标速度
+#define POS_INIT_TARGET_SPEED 110.0f              // 初始目标速度
 
 /****************** 数据类型定义 ******************/
 
