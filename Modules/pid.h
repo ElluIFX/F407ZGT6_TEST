@@ -45,7 +45,7 @@
 
 //位置环PID
 #define POS_KP 0.126f   // 比例项系数
-#define POS_KI 0.0004f  // 积分项系数
+#define POS_KI 0.0001f  // 积分项系数
 #define POS_KD 0.412f   // 微分项系数
 #define POS_DEAD_BAND (int32_t)(1.0f * PULSE_PER_ROTATION / 360.0f)  // 位置死区
 #define POS_MAX_I 20000l                          // 积分上限

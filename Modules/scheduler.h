@@ -15,30 +15,26 @@
 // #define _ENABLE_SCH_DEBUG
 
 #define UART_CONTROLLER_TASK_ID 0
-#define UART_OVERTIME_TASK_ID 1
-#define KEY_READ_TASK_ID 2
-#define KEY_CHECK_TASK_ID 3
-#define ADC_READ_TASK_ID 4
-#define MOTOR_POS_PID_TASK_ID 5
-#define MOTOR_SPD_PID_TASK_ID 6
-#define PARAM_REPORT_TASK_ID 7
+#define SCREEN_CONTROLLER_TASK_ID 1
+#define UART_OVERTIME_TASK_ID 2
+#define MOTOR_POS_PID_TASK_ID 3
+#define MOTOR_SPD_PID_TASK_ID 4
+#define PARAM_REPORT_TASK_ID 5
 
-#define SCH_TASK_COUNT  sizeof(schTaskList) / sizeof(scheduler_task_t)
+#define SCH_TASK_COUNT sizeof(schTaskList) / sizeof(scheduler_task_t)
 // typedef
 typedef struct {       //用户任务结构
   void (*task)(void);  // task function
-  float rateHz;     // task rate
+  float rateHz;        // task rate
   uint16_t periodMs;   // task period
   uint32_t lastRunMs;  // last run time
   uint8_t enable;      // enable or disable
 } scheduler_task_t;
 // private variables
 // private functions
+__weak void Screen_Controller_20Hz(void);
 __weak void Uart_Controller_20Hz(void);
 __weak void Uart_Overtime_100Hz(void);
-__weak void Key_Read_100Hz(void);
-__weak void Key_Check_1000Hz(void);
-__weak void ADC_Read_50Hz(void);
 __weak void Motor_Pos_PID_20Hz(void);
 __weak void Motor_Spd_PID_40Hz(void);
 __weak void Param_Report_40Hz(void);

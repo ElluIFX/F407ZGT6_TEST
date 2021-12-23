@@ -1,6 +1,7 @@
 /**
  * @file scheduler.c
- * @brief 时分调度器，目前基本使用__weak修饰，以便在其他文件中可以重写（不用考虑头文件问题）
+ * @brief
+ * 时分调度器，目前基本使用__weak修饰，以便在其他文件中可以重写（不用考虑头文件问题）
  * 后续直接整合，使用static修饰提高重入效率
  * @author Ellu (lutaoyu@163.com)
  * @version 1.0
@@ -15,24 +16,17 @@
 
 // task lists
 static scheduler_task_t schTaskList[] = {
-    {Uart_Controller_20Hz, 20, 0, 0, 1},
-    {Uart_Overtime_100Hz, 100, 0, 0, 1},
-    {Key_Read_100Hz, 100, 0, 0, 0},
-    {Key_Check_1000Hz, 1000, 0, 0, 0},
-    {ADC_Read_50Hz, 50, 0, 0, 0},
-    {Motor_Pos_PID_20Hz, 20, 0, 0, 0},
-    {Motor_Spd_PID_40Hz, 40, 0, 0, 0},
-    {Param_Report_40Hz, 40, 0, 0, 0},
+    {Uart_Controller_20Hz, 20, 0, 0, 0}, {Screen_Controller_20Hz, 20, 0, 0, 1},
+    {Uart_Overtime_100Hz, 100, 0, 0, 1}, {Motor_Pos_PID_20Hz, 20, 0, 0, 0},
+    {Motor_Spd_PID_40Hz, 40, 0, 0, 0},   {Param_Report_40Hz, 20, 0, 0, 0},
 #ifdef _ENABLE_SCH_DEBUG
     {Show_Sch_Debug_info, 0.2, 0, 0, 1},
 #endif
 };
 
 __weak void Uart_Controller_20Hz(void) { return; }
+__weak void Screen_Controller_20Hz(void) { return; }
 __weak void Uart_Overtime_100Hz(void) { return; }
-__weak void Key_Read_100Hz(void) { return; }
-__weak void Key_Check_1000Hz(void) { return; }
-__weak void ADC_Read_50Hz(void) { return; }
 __weak void Motor_Pos_PID_20Hz(void) { return; }
 __weak void Motor_Spd_PID_40Hz(void) { return; }
 __weak void Param_Report_40Hz(void) { return; }

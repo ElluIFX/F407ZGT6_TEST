@@ -12,7 +12,7 @@
  */
 
 #include "pid.h"
-
+#include "candy.h"
 /****************** Position PID Functions ******************/
 
 /**
@@ -228,9 +228,11 @@ void Motor_Pos_PID_Run(motor_t *motor) {
 void Motor_Spd_PID_Run(motor_t *motor) {
   float pwmDuty = Spd_PID_Calc(&motor->spdPID, motor->speed);
   if (pwmDuty > 0)
-    pwmDuty += MOTOR_LAUNCH_PWM_DUTY;
+    // pwmDuty += MOTOR_LAUNCH_PWM_DUTY;
+    pwmDuty = fmap(pwmDuty,0,100,MOTOR_LAUNCH_PWM_DUTY,100);
   else if (pwmDuty < 0)
-    pwmDuty -= MOTOR_LAUNCH_PWM_DUTY;
+    // pwmDuty -= MOTOR_LAUNCH_PWM_DUTY;
+    pwmDuty = fmap(pwmDuty,-100,0,-100,-MOTOR_LAUNCH_PWM_DUTY);
   else
     pwmDuty = 0;
   if (pwmDuty > 100) pwmDuty = 100;
