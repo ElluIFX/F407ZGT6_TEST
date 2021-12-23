@@ -57,7 +57,7 @@
 
 /* USER CODE BEGIN PV */
 uart_o_ctrl_t uart_1;
-uart_o_ctrl_t uart_2;
+uart_o_ctrl_t uart_s;
 unsigned short keyValue;
 motor_t motor_1;
 static uint8_t userMode = 0;
@@ -112,9 +112,9 @@ int main(void) {
   /* USER CODE BEGIN 2 */
   Scheduler_Init();  // initialize scheduler
   Enable_Uart_O_Control(&huart1, &uart_1);
-  Enable_Uart_O_Control(&huart2, &uart_2);
+  Enable_Uart_O_Control(&huart2, &uart_s);
   Motor_Setup(&motor_1, &htim5, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
-  screen("%srest%s", S_END_BIT, S_END_BIT);
+  screen("%srest%s", S_END_BIT, S_END_BIT);  // clear screen
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -194,7 +194,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   if (huart->Instance == USART1) {
     Uart_O_Data_Process(&huart1, &uart_1);
   } else if (huart->Instance == USART2) {
-    Uart_O_Data_Process(&huart2, &uart_2);
+    Uart_O_Data_Process(&huart2, &uart_s);
   }
 }
 
@@ -203,7 +203,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
  */
 void Uart_Overtime_100Hz(void) {
   Uart_O_Timeout_Check(&huart1, &uart_1);
-  Uart_O_Timeout_Check(&huart2, &uart_2);
+  Uart_O_Timeout_Check(&huart2, &uart_s);
   return;
 }
 
@@ -223,13 +223,13 @@ void Screen_Controller_20Hz(void) {
   static float setSpdKp = 0;
   static float setSpdKi = 0;
   static float setSpdKd = 0;
-  if (uart_2.rxSaveFlag) {
-    uart_2.rxSaveFlag = 0;
-    controlWord = uart_2.rxSaveBuf[0];
+  RGB(0, 0, 0);
+  if (uart_s.rxSaveFlag) {
+    uart_s.rxSaveFlag = 0;
+    controlWord = uart_s.rxSaveBuf[0];
     if (init) {
       switch (userMode) {
         case 0:  //控制选择
-          RGB(0, 0, 0);
           switch (controlWord) {
             case '1':
               userMode = 1;
@@ -269,32 +269,32 @@ void Screen_Controller_20Hz(void) {
             userMode = 0;
             break;
           }
-          if (sscanf((char *)uart_2.rxSaveBuf, "pp:%f", &setPosKp) == 1) {
+          if (sscanf((char *)uart_s.rxSaveBuf, "pp:%f", &setPosKp) == 1) {
             setPosKp /= 10000.0f;
             motor_1.posPID.proportion = setPosKp;
-          } else if (sscanf((char *)uart_2.rxSaveBuf, "pi:%f", &setPosKi) ==
+          } else if (sscanf((char *)uart_s.rxSaveBuf, "pi:%f", &setPosKi) ==
                      1) {
             setPosKi /= 10000.0f;
             motor_1.posPID.integral = setPosKi;
-          } else if (sscanf((char *)uart_2.rxSaveBuf, "pd:%f", &setPosKd) ==
+          } else if (sscanf((char *)uart_s.rxSaveBuf, "pd:%f", &setPosKd) ==
                      1) {
             setPosKd /= 10000.0f;
             motor_1.posPID.derivative = setPosKd;
-          } else if (sscanf((char *)uart_2.rxSaveBuf, "sp:%f", &setSpdKp) ==
+          } else if (sscanf((char *)uart_s.rxSaveBuf, "sp:%f", &setSpdKp) ==
                      1) {
             setSpdKp /= 10000.0f;
             motor_1.spdPID.proportion = setSpdKp;
-          } else if (sscanf((char *)uart_2.rxSaveBuf, "si:%f", &setSpdKi) ==
+          } else if (sscanf((char *)uart_s.rxSaveBuf, "si:%f", &setSpdKi) ==
                      1) {
             setSpdKi /= 10000.0f;
             motor_1.spdPID.integral = setSpdKi;
-          } else if (sscanf((char *)uart_2.rxSaveBuf, "sd:%f", &setSpdKd) ==
+          } else if (sscanf((char *)uart_s.rxSaveBuf, "sd:%f", &setSpdKd) ==
                      1) {
             setSpdKd /= 10000.0f;
             motor_1.spdPID.derivative = setSpdKd;
-          } else if (sscanf((char *)uart_2.rxSaveBuf, "gdeg:%f", &goDeg) == 1)
+          } else if (sscanf((char *)uart_s.rxSaveBuf, "gdeg:%f", &goDeg) == 1)
             __MOTOR_GO_DEGREE(motor_1, goDeg);
-          else if (sscanf((char *)uart_2.rxSaveBuf, "sdeg:%f", &setDeg) == 1)
+          else if (sscanf((char *)uart_s.rxSaveBuf, "sdeg:%f", &setDeg) == 1)
             __MOTOR_SET_DEGREE(motor_1, setDeg);
           break;
         case 2:  //转速PID控制
@@ -306,16 +306,16 @@ void Screen_Controller_20Hz(void) {
             userMode = 0;
             break;
           }
-          if (sscanf((char *)uart_2.rxSaveBuf, "s:%f", &speed) == 1)
+          if (sscanf((char *)uart_s.rxSaveBuf, "s:%f", &speed) == 1)
             __MOTOR_SET_SPEED(motor_1, speed);
-          else if (sscanf((char *)uart_2.rxSaveBuf, "sp:%f", &setSpdKp) == 1) {
+          else if (sscanf((char *)uart_s.rxSaveBuf, "sp:%f", &setSpdKp) == 1) {
             setPosKp /= 10000.0f;
             motor_1.spdPID.proportion = setSpdKp;
-          } else if (sscanf((char *)uart_2.rxSaveBuf, "si:%f", &setSpdKi) ==
+          } else if (sscanf((char *)uart_s.rxSaveBuf, "si:%f", &setSpdKi) ==
                      1) {
             setPosKi /= 10000.0f;
             motor_1.spdPID.integral = setSpdKi;
-          } else if (sscanf((char *)uart_2.rxSaveBuf, "sd:%f", &setSpdKd) ==
+          } else if (sscanf((char *)uart_s.rxSaveBuf, "sd:%f", &setSpdKd) ==
                      1) {
             setPosKd /= 10000.0f;
             motor_1.spdPID.derivative = setSpdKd;
@@ -329,7 +329,7 @@ void Screen_Controller_20Hz(void) {
             userMode = 0;
             break;
           }
-          if (sscanf((char *)uart_2.rxSaveBuf, "d:%f", &duty) == 1) {
+          if (sscanf((char *)uart_s.rxSaveBuf, "d:%f", &duty) == 1) {
             duty /= 10.0f;
             duty = fmap(duty, 0.0f, 100.0f, 50.0f, 100.0f);
             __MOTOR_PWM_SETFWD(motor_1, duty);
@@ -380,7 +380,7 @@ void Param_Report_40Hz(void) {
   // printf("M1:%f,%f,%f,%ld\r\n", __MOTOR_GET_DEGREE(motor_1), motor_1.speed,
   //        motor_1.pwmDuty,
   //        __MOTOR_GET_POS(motor_1));  //输出位置，转速，PWM占空比
-  switch(userMode) {
+  switch (userMode) {
     case 3:
       screen("add map.id,0,%d%srpm.val=%d%s", calc, S_END_BIT,
              (int)(motor_1.speed * 10), S_END_BIT);
