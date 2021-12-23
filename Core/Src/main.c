@@ -35,6 +35,7 @@
 #include "stdio.h"
 #include "string.h"
 #include "uartPack.h"
+#include "candy.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -118,7 +119,7 @@ int main(void) {
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   printf("\r\n--- System running ---\r\n");
-  printf("float: %f\r\n", 3.1415926);
+  screen("x");
   while (1) {
     Scheduler_Run();   // run scheduler
     User_Task_Ctrl();  // run user task
