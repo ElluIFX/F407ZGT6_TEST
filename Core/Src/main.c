@@ -243,7 +243,6 @@ void Screen_Controller_20Hz(void) {
             case '2':
               userMode = 2;
               HAL_Delay(1000);
-              __MOTOR_RESET_ENCODER(motor_1);
               HAL_TIM_Base_Start_IT(&htim7);  //开转速计算
               Enable_SchTask(PARAM_REPORT_TASK_ID);
               Enable_SchTask(MOTOR_SPD_PID_TASK_ID);
@@ -251,7 +250,6 @@ void Screen_Controller_20Hz(void) {
             case '3':
               userMode = 3;
               HAL_Delay(1000);
-              __MOTOR_RESET_ENCODER(motor_1);
               Enable_SchTask(PARAM_REPORT_TASK_ID);
               HAL_TIM_Base_Start_IT(&htim7);  //开转速计算
               break;
@@ -339,6 +337,7 @@ void Screen_Controller_20Hz(void) {
       }
     } else {
       if (controlWord == 'o') {
+        HAL_Delay(1000);
         screen("in.en=1%s", S_END_BIT);
         HAL_Delay(100);
         screen("sp=%d%ssi=%d%ssd=%d%spp=%d%spi=%d%spd=%d%s",
