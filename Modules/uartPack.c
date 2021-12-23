@@ -1,6 +1,7 @@
 /**
  * @file uartPack.c
- * @brief 封装了一些串口函数，包括串口发送和接收，串口发送和接收的数据类型都是uint8_t
+ * @brief
+ * 封装了一些串口函数，包括串口发送和接收，串口发送和接收的数据类型都是uint8_t
  * ，接受分为两种，一种是超时判定，一种是结束位判定
  * @author Ellu (lutaoyu@163.com)
  * @version 1.0
@@ -12,6 +13,7 @@
 #include "uartPack.h"
 
 #include "string.h"
+#include "stdarg.h"
 #include "usart.h"
 
 //重定向printf
@@ -31,6 +33,28 @@ int _write(int fd, char *ch, int len) {
   return len;
 }
 // END 重定向printf
+
+static char sendBuff[64];  //缓冲区
+static int sendLen = 0;    //发送计数
+
+/**
+ * @brief Send a format string to target UART port
+ * @param  huart            UART handle
+ * @param  fmt              format string
+ * @retval number of bytes sent, -1 if error
+ */
+int printft(UART_HandleTypeDef *huart, char *fmt, ...) {
+  va_list ap;         // typedef char *va_list
+  va_start(ap, fmt);  //找到第一个可变形参的地址赋给ap
+  sendLen = vsprintf(sendBuff, fmt, ap);
+  va_end(ap);
+  if (sendLen > 0) {
+    HAL_UART_Transmit_IT(huart, (uint8_t *)sendBuff, sendLen);
+    while (huart->gState != HAL_UART_STATE_READY) {
+    }
+  }
+  return sendLen;
+}
 
 /**
  * @brief Enable a Overtime UART controller, call once before using UART

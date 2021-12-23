@@ -14,6 +14,9 @@
 // private define
 #define _REDIRECT_UART_PORT huart1 //重定向串口目标
 
+//typedef
+// typedef char* va_list;
+
 // constants
 #define RX_BUFFER_SIZE 128
 #define _RX_DEFAILT_TIMEOUT 10
@@ -45,6 +48,7 @@ typedef struct {                      //单结束位型UART控制结构体
 
 // public functions
 
+int printft(UART_HandleTypeDef *huart, char *fmt, ...);
 void Enable_Uart_O_Control(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl);
 void Enable_Uart_E_Control(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl);
 uint8_t Uart_O_Data_Process(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl);
