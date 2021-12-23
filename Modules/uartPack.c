@@ -34,7 +34,7 @@ int _write(int fd, char *ch, int len) {
 }
 // END 重定向printf
 
-static char sendBuff[64];  //缓冲区
+static char sendBuff[128];  //缓冲区
 static int sendLen = 0;    //发送计数
 
 /**
