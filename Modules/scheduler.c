@@ -16,7 +16,7 @@
 
 // task lists
 static scheduler_task_t schTaskList[] = {
-    {Uart_Controller_20Hz, 20, 0, 0, 1}, {Screen_Controller_20Hz, 20, 0, 0, 1},
+    {Uart_Controller_20Hz, 20, 0, 0, 0}, {Screen_Controller_20Hz, 20, 0, 0, 1},
     {Uart_Overtime_100Hz, 100, 0, 0, 1}, {Motor_Pos_PID_20Hz, 20, 0, 0, 0},
     {Motor_Spd_PID_40Hz, 40, 0, 0, 0},   {Param_Report_40Hz, 20, 0, 0, 0},
 #ifdef _ENABLE_SCH_DEBUG
