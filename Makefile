@@ -43,6 +43,7 @@ Modules/pid.c \
 Modules/uartPack.c \
 Modules/programCtrl.c \
 Modules/scheduler.c \
+Modules/candy.c \
 Core/Src/usart.c \
 Core/Src/stm32f4xx_it.c \
 Core/Src/stm32f4xx_hal_msp.c \
