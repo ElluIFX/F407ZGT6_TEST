@@ -201,7 +201,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 /**
  * @brief 串口超时处理
  */
-void Uart_Overtime_100Hz(void) {
+void Task_Uart_Overtime(void) {
   Uart_O_Timeout_Check(&huart1, &uart_1);
   Uart_O_Timeout_Check(&huart2, &uart_s);
   return;
@@ -210,7 +210,7 @@ void Uart_Overtime_100Hz(void) {
 /**
  * @brief 测试用，串口控制
  */
-void Screen_Controller_20Hz(void) {
+void Task_Screen_Controller(void) {
   static uint8_t init = 0;
   static uint8_t controlWord = 0;
   static float goDeg = 0;
@@ -361,18 +361,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   }
 }
 
-void Motor_Pos_PID_20Hz(void) {
+void Task_Motor_Pos_PID(void) {
   HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
   Motor_Pos_PID_Run(&motor_1);
 }
 
-void Motor_Spd_PID_40Hz(void) {
+void Task_Motor_Spd_PID(void) {
   HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
 
   Motor_Spd_PID_Run(&motor_1);
 }
 
-void Param_Report_40Hz(void) {
+void Task_Param_Report(void) {
   static uint8_t calc = 0;
   static uint8_t calc2 = 0;
   calc = (uint8_t)fmap(motor_1.speed, -120, 120, 0, 80);

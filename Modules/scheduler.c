@@ -16,20 +16,20 @@
 
 // task lists
 static scheduler_task_t schTaskList[] = {
-    {Uart_Controller_20Hz, 20, 0, 0, 0}, {Screen_Controller_20Hz, 20, 0, 0, 1},
-    {Uart_Overtime_100Hz, 100, 0, 0, 1}, {Motor_Pos_PID_20Hz, 20, 0, 0, 0},
-    {Motor_Spd_PID_40Hz, 40, 0, 0, 0},   {Param_Report_40Hz, 20, 0, 0, 0},
+    {Task_Uart_Controller, 20, 0, 0, 0}, {Task_Screen_Controller, 20, 0, 0, 1},
+    {Task_Uart_Overtime, 100, 0, 0, 1}, {Task_Motor_Pos_PID, 20, 0, 0, 0},
+    {Task_Motor_Spd_PID, 40, 0, 0, 0},   {Task_Param_Report, 20, 0, 0, 0},
 #ifdef _ENABLE_SCH_DEBUG
     {Show_Sch_Debug_info, 0.2, 0, 0, 1},
 #endif
 };
 
-__weak void Uart_Controller_20Hz(void) { return; }
-__weak void Screen_Controller_20Hz(void) { return; }
-__weak void Uart_Overtime_100Hz(void) { return; }
-__weak void Motor_Pos_PID_20Hz(void) { return; }
-__weak void Motor_Spd_PID_40Hz(void) { return; }
-__weak void Param_Report_40Hz(void) { return; }
+__weak void Task_Uart_Controller(void) { return; }
+__weak void Task_Screen_Controller(void) { return; }
+__weak void Task_Uart_Overtime(void) { return; }
+__weak void Task_Motor_Pos_PID(void) { return; }
+__weak void Task_Motor_Spd_PID(void) { return; }
+__weak void Task_Param_Report(void) { return; }
 
 // @note !redefined in main.c
 

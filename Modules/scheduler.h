@@ -32,12 +32,12 @@ typedef struct {       //用户任务结构
 } scheduler_task_t;
 // private variables
 // private functions
-__weak void Screen_Controller_20Hz(void);
-__weak void Uart_Controller_20Hz(void);
-__weak void Uart_Overtime_100Hz(void);
-__weak void Motor_Pos_PID_20Hz(void);
-__weak void Motor_Spd_PID_40Hz(void);
-__weak void Param_Report_40Hz(void);
+__weak void Task_Screen_Controller(void);
+__weak void Task_Uart_Controller(void);
+__weak void Task_Uart_Overtime(void);
+__weak void Task_Motor_Pos_PID(void);
+__weak void Task_Motor_Spd_PID(void);
+__weak void Task_Param_Report(void);
 
 void Scheduler_Init(void);
 void Scheduler_Run(void);
