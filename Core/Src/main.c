@@ -395,6 +395,7 @@ void Task_Param_Report(void) {
              (int)(__MOTOR_GET_DEGREE(motor_1) * 100), S_END_BIT);
       break;
   }
+
 }
 /* USER CODE END 4 */
 
