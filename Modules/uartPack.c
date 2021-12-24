@@ -18,7 +18,6 @@
 
 //重定向printf
 #if 1
-#pragma import(__use_no_semihosting)
 #include "stdio.h"
 //修正标准库流
 struct __FILE {
@@ -84,6 +83,10 @@ void Enable_Uart_E_Control(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl) {
   if (ctrl->rxEndBit == 0) {
     ctrl->rxEndBit = _RX_DEFAILT_ENDBIT;
   }
+  ctrl->rxFlag = 0;
+  ctrl->rxSaveFlag = 0;
+  ctrl->rxBufIndex = 0;
+  ctrl->rxSaveCounter = 0;
 }
 
 /**

@@ -110,6 +110,7 @@ int main(void) {
   MX_TIM7_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  RGB(1, 0, 0);
   Scheduler_Init();  // initialize scheduler
   Enable_Uart_O_Control(&huart1, &uart_1);
   Enable_Uart_O_Control(&huart2, &uart_s);
@@ -223,7 +224,6 @@ void Task_Screen_Controller(void) {
   static float setSpdKp = 0;
   static float setSpdKi = 0;
   static float setSpdKd = 0;
-  RGB(0, 0, 0);
   if (uart_s.rxSaveFlag) {
     uart_s.rxSaveFlag = 0;
     controlWord = uart_s.rxSaveBuf[0];
@@ -233,25 +233,25 @@ void Task_Screen_Controller(void) {
           switch (controlWord) {
             case '1':
               userMode = 1;
-              HAL_Delay(1000);
               __MOTOR_RESET_ENCODER(motor_1);
               HAL_TIM_Base_Start_IT(&htim7);  //开转速计算
               Enable_SchTask(MOTOR_POS_PID_TASK_ID);
               Enable_SchTask(MOTOR_SPD_PID_TASK_ID);
               Enable_SchTask(PARAM_REPORT_TASK_ID);
+              HAL_Delay(100);
               break;
             case '2':
               userMode = 2;
-              HAL_Delay(1000);
               HAL_TIM_Base_Start_IT(&htim7);  //开转速计算
               Enable_SchTask(PARAM_REPORT_TASK_ID);
               Enable_SchTask(MOTOR_SPD_PID_TASK_ID);
+              HAL_Delay(100);
               break;
             case '3':
               userMode = 3;
-              HAL_Delay(1000);
               Enable_SchTask(PARAM_REPORT_TASK_ID);
               HAL_TIM_Base_Start_IT(&htim7);  //开转速计算
+              HAL_Delay(100);
               break;
             default:
               break;
@@ -335,8 +335,10 @@ void Task_Screen_Controller(void) {
           }
           break;
       }
+      RGB(0, 0, 0);
     } else {
       if (controlWord == 'o') {
+        RGB(0, 0, 1);
         HAL_Delay(1000);
         screen("in.en=1%s", S_END_BIT);
         HAL_Delay(100);
@@ -347,9 +349,13 @@ void Task_Screen_Controller(void) {
                (int)(motor_1.posPID.proportion * 10000.0f), S_END_BIT,
                (int)(motor_1.posPID.integral * 10000.0f), S_END_BIT,
                (int)(motor_1.posPID.derivative * 10000.0f), S_END_BIT);
+        RGB(1, 0, 1);
         HAL_Delay(1000);
+        RGB(0, 1, 0);
         screen("ok.en=1%s", S_END_BIT);
+        HAL_Delay(200);
         init = 1;
+        RGB(0, 0, 0);
       }
     }
   }
@@ -395,7 +401,6 @@ void Task_Param_Report(void) {
              (int)(__MOTOR_GET_DEGREE(motor_1) * 100), S_END_BIT);
       break;
   }
-
 }
 /* USER CODE END 4 */
 
