@@ -12,11 +12,13 @@
 
 #include "uartPack.h"
 
-#include "string.h"
 #include "stdarg.h"
+#include "string.h"
 #include "usart.h"
 
 //重定向printf
+#if 1
+#pragma import(__use_no_semihosting)
 #include "stdio.h"
 //修正标准库流
 struct __FILE {
@@ -25,17 +27,18 @@ struct __FILE {
 FILE __stdout;
 //定义_sys_exit()禁用半主机模式
 void _sys_exit(int x) { x = x; }
-//重定向write方法
+// 重定向write方法
 int _write(int fd, char *ch, int len) {
+  // HAL_UART_Transmit(&_REDIRECT_UART_PORT, (uint8_t *)ch, len,1000);
   HAL_UART_Transmit_IT(&_REDIRECT_UART_PORT, (uint8_t *)ch, len);
   while (huart1.gState != HAL_UART_STATE_READY) {
   }
   return len;
 }
-// END 重定向printf
+#endif  // END 重定向printf
 
 static char sendBuff[128];  //缓冲区
-static int sendLen = 0;    //发送计数
+static int sendLen = 0;     //发送计数
 
 /**
  * @brief Send a format string to target UART port
