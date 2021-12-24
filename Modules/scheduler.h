@@ -12,7 +12,7 @@
 
 #include "main.h"
 //  defines
-// #define _ENABLE_SCH_DEBUG
+#define _ENABLE_SCH_DEBUG
 
 #define UART_CONTROLLER_TASK_ID 0
 #define SCREEN_CONTROLLER_TASK_ID 1

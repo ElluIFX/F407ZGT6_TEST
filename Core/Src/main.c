@@ -368,7 +368,6 @@ void Task_Motor_Pos_PID(void) {
 
 void Task_Motor_Spd_PID(void) {
   HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
-
   Motor_Spd_PID_Run(&motor_1);
 }
 
