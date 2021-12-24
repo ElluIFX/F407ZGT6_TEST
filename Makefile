@@ -141,8 +141,9 @@ ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffuncti
 
 CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections -mfloat-abi=hard
 
+#Debugger version
 ifeq ($(DEBUG), 1)
-CFLAGS += -g -gdwarf-2 
+CFLAGS += -g -gdwarf-2
 endif
 
 
@@ -212,13 +213,16 @@ usbflash:
 usberase:
 	@STM32_Programmer_CLI -c port=usb1 -e all
 	@echo ERASE Done
+
+PORT = COM47
+BAUD = 345600
 uartflash:
-	@make && STM32_Programmer_CLI -c port=COM47 -w "$(BUILD_DIR)/$(TARGET).bin" 0x08000000 -v -g 0x08000000
+	@make && STM32_Programmer_CLI -c port=$(PORT) br=$(BAUD) -w "$(BUILD_DIR)/$(TARGET).bin" 0x08000000 -v -g 0x08000000
 	@echo UART FLASH Done
 uarterase:
-	@STM32_Programmer_CLI -c port=COM47 -e all
+	@STM32_Programmer_CLI -c port=$(PORT) br=$(BAUD) -e all
 	@echo ERASE Done
-  
+
 #######################################
 # dependencies
 #######################################
