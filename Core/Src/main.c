@@ -197,7 +197,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 /**
  * @brief 串口超时处理
  */
-void Uart_Overtime_100Hz(void) {
+void Task_Uart_Overtime(void) {
   Uart_O_Timeout_Check(&huart1, &uart_1);
   return;
 }
@@ -205,7 +205,7 @@ void Uart_Overtime_100Hz(void) {
 /**
  * @brief 测试用，串口控制
  */
-void Uart_Controller_20Hz(void) {
+void Task_Uart_Controller(void) {
   static uint8_t userMode = 0;
   static float goDeg = 0;
   static float setDeg = 0;
@@ -342,7 +342,7 @@ void Uart_Controller_20Hz(void) {
 /**
  * @brief check keys
  */
-void Key_Check_1000Hz(void) {
+void Task_Key_Check(void) {
   key_check_all_loop_1ms();
   return;
 }
@@ -350,7 +350,7 @@ void Key_Check_1000Hz(void) {
 /**
  * @brief read keys
  */
-void Key_Read_100Hz(void) {
+void Task_Key_Read(void) {
   keyValue = key_read_value();
   switch (keyValue) {
     case KEY1_SHORT:
@@ -379,7 +379,7 @@ void Key_Read_100Hz(void) {
 /**
  * @brief Read ADC value
  */
-void ADC_Read_50Hz(void) {
+void Task_ADC_Read(void) {
   double calcValue = 0;
   HAL_ADC_Start(&hadc1);
   HAL_ADC_PollForConversion(&hadc1, 50);  //等待转换完成
@@ -428,18 +428,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   }
 }
 
-void Motor_Pos_PID_20Hz(void) {
+void Task_Motor_Pos_PID(void) {
   HAL_GPIO_TogglePin(LED_G_GPIO_Port, LED_G_Pin);
   Motor_Pos_PID_Run(&motor_1);
 }
 
-void Motor_Spd_PID_40Hz(void) {
+void Task_Motor_Spd_PID(void) {
   HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
 
   Motor_Spd_PID_Run(&motor_1);
 }
 
-void Param_Report_40Hz(void) {
+void Task_Param_Report(void) {
   printf("M1:%f,%f,%f,%ld\r\n", __MOTOR_GET_DEGREE(motor_1), motor_1.speed,
          motor_1.pwmDuty,
          __MOTOR_GET_POS(motor_1));  //输出位置，转速，PWM占空比

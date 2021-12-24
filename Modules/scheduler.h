@@ -34,14 +34,14 @@ typedef struct {       //用户任务结构
 } scheduler_task_t;
 // private variables
 // private functions
-__weak void Uart_Controller_20Hz(void);
-__weak void Uart_Overtime_100Hz(void);
-__weak void Key_Read_100Hz(void);
-__weak void Key_Check_1000Hz(void);
-__weak void ADC_Read_50Hz(void);
-__weak void Motor_Pos_PID_20Hz(void);
-__weak void Motor_Spd_PID_40Hz(void);
-__weak void Param_Report_40Hz(void);
+__weak void Task_Uart_Controller(void);
+__weak void Task_Uart_Overtime(void);
+__weak void Task_Key_Read(void);
+__weak void Task_Key_Check(void);
+__weak void Task_ADC_Read(void);
+__weak void Task_Motor_Pos_PID(void);
+__weak void Task_Motor_Spd_PID(void);
+__weak void Task_Param_Report(void);
 
 void Scheduler_Init(void);
 void Scheduler_Run(void);
