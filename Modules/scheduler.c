@@ -1,6 +1,7 @@
 /**
  * @file scheduler.c
- * @brief 时分调度器，目前基本使用__weak修饰，以便在其他文件中可以重写（不用考虑头文件问题）
+ * @brief
+ * 时分调度器，目前基本使用__weak修饰，以便在其他文件中可以重写（不用考虑头文件问题）
  * 后续直接整合，使用static修饰提高重入效率
  * @author Ellu (lutaoyu@163.com)
  * @version 1.0
@@ -15,24 +16,17 @@
 
 // task lists
 static scheduler_task_t schTaskList[] = {
-    {Task_Uart_Controller, 20, 0, 0, 1},
-    {Task_Uart_Overtime, 100, 0, 0, 1},
-    {Task_Key_Read, 100, 0, 0, 0},
-    {Task_Key_Check, 1000, 0, 0, 0},
-    {Task_ADC_Read, 50, 0, 0, 0},
-    {Task_Motor_Pos_PID, 20, 0, 0, 0},
-    {Task_Motor_Spd_PID, 40, 0, 0, 0},
-    {Task_Param_Report, 40, 0, 0, 0},
+    {Task_Uart_Controller, 20, 0, 0, 0}, {Task_Screen_Controller, 20, 0, 0, 1},
+    {Task_Uart_Overtime, 100, 0, 0, 1},  {Task_Motor_Pos_PID, 20, 0, 0, 0},
+    {Task_Motor_Spd_PID, 40, 0, 0, 0},   {Task_Param_Report, 20, 0, 0, 0},
 #ifdef _ENABLE_SCH_DEBUG
     {Show_Sch_Debug_info, 0.2, 0, 0, 1},
 #endif
 };
 
 __weak void Task_Uart_Controller(void) { return; }
+__weak void Task_Screen_Controller(void) { return; }
 __weak void Task_Uart_Overtime(void) { return; }
-__weak void Task_Key_Read(void) { return; }
-__weak void Task_Key_Check(void) { return; }
-__weak void Task_ADC_Read(void) { return; }
 __weak void Task_Motor_Pos_PID(void) { return; }
 __weak void Task_Motor_Spd_PID(void) { return; }
 __weak void Task_Param_Report(void) { return; }
@@ -133,6 +127,7 @@ void Show_Sch_Debug_info(void) {
     }
     sprintf(str_buf, "%sTask %d: %ldms\r\n", str_buf, i,
             _sch_debug_task_consuming[i]);
+    _sch_debug_task_consuming[i] = 0;
   }
   printf("%s<<\r\n", str_buf);
 }

@@ -13,6 +13,8 @@
 #include <main.h>
 
 float fmap(float x, float in_min, float in_max, float out_min, float out_max);
+#define S_END_BIT "\xff\xff\xff"
+#define screen(x,...) printft(&huart2,x,__VA_ARGS__)
 
 
 #endif
