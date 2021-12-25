@@ -12,7 +12,7 @@
 
 #include "main.h"
 //  defines
-// #define _ENABLE_SCH_DEBUG
+#define _ENABLE_SCH_DEBUG 0
 
 #define UART_CONTROLLER_TASK_ID 0
 #define SCREEN_CONTROLLER_TASK_ID 1
@@ -44,7 +44,8 @@ void Scheduler_Run(void);
 void Enable_SchTask(uint8_t taskId);
 void Disable_SchTask(uint8_t taskId);
 void Set_SchTask_Freq(uint8_t taskId, float freq);
-#ifdef _ENABLE_SCH_DEBUG
+#if _ENABLE_SCH_DEBUG
 void Show_Sch_Debug_info(void);
+#warning You Enabled a Schduler Debugging Feature, which will cause lower performance.
 #endif  // _ENABLE_SCH_DEBUG
 #endif  // _SCHEDULER_H_

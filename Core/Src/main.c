@@ -227,6 +227,7 @@ void Task_Screen_Controller(void) {
   if (uart_s.rxSaveFlag) {
     uart_s.rxSaveFlag = 0;
     controlWord = uart_s.rxSaveBuf[0];
+    printf("\r\n>> %s\r\n", uart_s.rxSaveBuf);
     if (init) {
       switch (userMode) {
         case 0:  //控制选择
@@ -349,6 +350,7 @@ void Task_Screen_Controller(void) {
                (int)(motor_1.posPID.proportion * 10000.0f), S_END_BIT,
                (int)(motor_1.posPID.integral * 10000.0f), S_END_BIT,
                (int)(motor_1.posPID.derivative * 10000.0f), S_END_BIT);
+        // screen("thsp=15%sthup=1%susup=1%s", S_END_BIT, S_END_BIT, S_END_BIT);kkeil
         RGB(1, 0, 1);
         HAL_Delay(1000);
         RGB(0, 1, 0);
@@ -357,6 +359,12 @@ void Task_Screen_Controller(void) {
         init = 1;
         RGB(0, 0, 0);
       }
+    }
+  } else if (uart_1.rxSaveFlag) {
+    uart_1.rxSaveFlag = 0;
+    controlWord = uart_1.rxSaveBuf[0];
+    if (controlWord == '>') {
+      screen("%s", uart_1.rxSaveBuf + 1);
     }
   }
 }

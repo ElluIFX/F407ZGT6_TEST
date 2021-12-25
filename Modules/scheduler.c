@@ -19,7 +19,7 @@ static scheduler_task_t schTaskList[] = {
     {Task_Uart_Controller, 20, 0, 0, 0}, {Task_Screen_Controller, 20, 0, 0, 1},
     {Task_Uart_Overtime, 100, 0, 0, 1},  {Task_Motor_Pos_PID, 20, 0, 0, 0},
     {Task_Motor_Spd_PID, 40, 0, 0, 0},   {Task_Param_Report, 20, 0, 0, 0},
-#ifdef _ENABLE_SCH_DEBUG
+#if _ENABLE_SCH_DEBUG
     {Show_Sch_Debug_info, 0.2, 0, 0, 1},
 #endif
 };
@@ -36,7 +36,7 @@ __weak void Task_Param_Report(void) { return; }
 /************************ scheduler tasks end ************************/
 
 // variables
-#ifdef _ENABLE_SCH_DEBUG
+#if _ENABLE_SCH_DEBUG
 uint32_t _sch_debug_task_consuming[SCH_TASK_COUNT - 1];
 __IO uint32_t _sch_debug_task_tick = 0;
 #endif  // _ENABLE_SCH_DEBUG
@@ -66,15 +66,15 @@ void Scheduler_Run(void) {
     if (schTaskList[i].enable &&
         (currentTime - schTaskList[i].lastRunMs >= schTaskList[i].periodMs)) {
       schTaskList[i].lastRunMs = currentTime;
-#ifndef _ENABLE_SCH_DEBUG
-      schTaskList[i].task();
-#else
+#if _ENABLE_SCH_DEBUG
       _sch_debug_task_tick = HAL_GetTick();
       schTaskList[i].task();
       _sch_debug_task_tick = HAL_GetTick() - _sch_debug_task_tick;
       if (_sch_debug_task_consuming[i] < _sch_debug_task_tick) {
         _sch_debug_task_consuming[i] = _sch_debug_task_tick;
       }
+#else
+      schTaskList[i].task();
 #endif  // _ENABLE_SCH_DEBUG
     }
   }
@@ -117,7 +117,7 @@ void Set_SchTask_Freq(uint8_t taskId, float freq) {
 
 // debug functions
 
-#ifdef _ENABLE_SCH_DEBUG
+#if _ENABLE_SCH_DEBUG
 
 void Show_Sch_Debug_info(void) {
   static uint8_t str_buf[100];
