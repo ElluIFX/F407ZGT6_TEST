@@ -6,5 +6,4 @@
 build/
 openocd.cfg
 *.svd
-*.ld
 .mxproject
