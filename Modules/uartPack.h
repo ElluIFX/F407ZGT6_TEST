@@ -25,26 +25,22 @@
 
 // typedef
 typedef struct {                      //超时型UART控制结构体
-  __IO uint8_t rxFlag;                //正在接收标志位
-  __IO uint8_t rxSaveFlag;            //接收完成标志位
-  uint8_t rxData[2];                  //接收到的数据
   uint8_t rxBuf[RX_BUFFER_SIZE];      //接收缓冲区
-  __IO uint8_t rxBufIndex;            //接收缓冲区索引
-  __IO uint8_t rxSaveCounter;         //接收保存区计数器
   uint8_t rxSaveBuf[RX_BUFFER_SIZE];  //接收保存缓冲区
+  __IO uint8_t rxBufIndex;            //接收缓冲区索引
+  __IO uint8_t rxSaveFlag;            //接收完成标志位
+  __IO uint8_t rxSaveCounter;         //接收保存区计数器
   __IO uint32_t rxTick;               //接收超时计时器
   uint32_t rxTimeout;                 //接收超时时间
   UART_HandleTypeDef *huart;          //串口句柄
 } uart_o_ctrl_t;
 
 typedef struct {                      //单结束位型UART控制结构体
-  __IO uint8_t rxFlag;                //正在接收标志位
-  __IO uint8_t rxSaveFlag;            //接收完成标志位
-  uint8_t rxData[2];                  //接收到的数据
   uint8_t rxBuf[RX_BUFFER_SIZE];      //接收缓冲区
+  uint8_t rxSaveBuf[RX_BUFFER_SIZE];  //接收保存缓冲区
+  __IO uint8_t rxSaveFlag;            //接收完成标志位
   __IO uint8_t rxBufIndex;            //接收缓冲区索引
   __IO uint8_t rxSaveCounter;         //接收保存区计数器
-  uint8_t rxSaveBuf[RX_BUFFER_SIZE];  //接收保存缓冲区
   uint8_t rxEndBit;                   //接收结束位
   UART_HandleTypeDef *huart;          //串口句柄
 } uart_e_ctrl_t;
@@ -53,6 +49,7 @@ typedef struct {                      //单结束位型UART控制结构体
 #define __RX_DONE(uart_t) uart_t.rxSaveFlag
 #define __RX_DATA(uart_t) uart_t.rxSaveBuf
 #define __RX_COUNT(uart_t) uart_t.rxSaveCounter
+#define __RX_READOK(uart_t) (uart_t.rxSaveFlag = 0)
 
 // public functions
 

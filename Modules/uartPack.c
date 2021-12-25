@@ -64,11 +64,10 @@ int printft(UART_HandleTypeDef *huart, char *fmt, ...) {
  */
 void Enable_Uart_O_Control(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl) {
   //设置串口接收中断
-  HAL_UART_Receive_IT(huart, ctrl->rxData, 1);
+  HAL_UART_Receive_IT(huart, ctrl->rxBuf, 1);
   if (ctrl->rxTimeout == 0) {
     ctrl->rxTimeout = _RX_DEFAILT_TIMEOUT;
   }
-  ctrl->rxFlag = 0;
   ctrl->rxSaveFlag = 0;
   ctrl->rxBufIndex = 0;
   ctrl->rxSaveCounter = 0;
@@ -83,11 +82,10 @@ void Enable_Uart_O_Control(UART_HandleTypeDef *huart, uart_o_ctrl_t *ctrl) {
  */
 void Enable_Uart_E_Control(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl) {
   //设置串口接收中断
-  HAL_UART_Receive_IT(huart, ctrl->rxData, 1);
+  HAL_UART_Receive_IT(huart, ctrl->rxBuf, 1);
   if (ctrl->rxEndBit == 0) {
     ctrl->rxEndBit = _RX_DEFAILT_ENDBIT;
   }
-  ctrl->rxFlag = 0;
   ctrl->rxSaveFlag = 0;
   ctrl->rxBufIndex = 0;
   ctrl->rxSaveCounter = 0;
@@ -101,19 +99,16 @@ void Enable_Uart_E_Control(UART_HandleTypeDef *huart, uart_e_ctrl_t *ctrl) {
  * @retval 1: data overflow, 0: no data overflow
  */
 uint8_t Uart_O_Data_Process(uart_o_ctrl_t *ctrl) {
-  ctrl->rxFlag = 1;
   ctrl->rxTick = HAL_GetTick();
-  ctrl->rxBuf[ctrl->rxBufIndex++] = ctrl->rxData[0];
-  if (ctrl->rxBufIndex >= RX_BUFFER_SIZE - 1) {
+  if (++ctrl->rxBufIndex >= RX_BUFFER_SIZE - 1) {
     memcpy(ctrl->rxSaveBuf, ctrl->rxBuf, ctrl->rxBufIndex);
     ctrl->rxSaveCounter = ctrl->rxBufIndex;
     ctrl->rxSaveBuf[ctrl->rxBufIndex] = 0;
     ctrl->rxSaveFlag = 1;
-    ctrl->rxFlag = 0;
     ctrl->rxBufIndex = 0;
     return 1;
   }
-  HAL_UART_Receive_IT(ctrl->huart, ctrl->rxData, 1);
+  HAL_UART_Receive_IT(ctrl->huart, ctrl->rxBuf + ctrl->rxBufIndex, 1);
   return 0;
 }
 
@@ -124,13 +119,14 @@ uint8_t Uart_O_Data_Process(uart_o_ctrl_t *ctrl) {
  * @retval 1: timeout, 0: not timeout
  */
 uint8_t Uart_O_Timeout_Check(uart_o_ctrl_t *ctrl) {
-  if (ctrl->rxFlag && HAL_GetTick() - ctrl->rxTick > 10) {
+  if (ctrl->rxBufIndex && HAL_GetTick() - ctrl->rxTick > 10) {
+    HAL_UART_AbortReceive_IT(ctrl->huart);
     memcpy(ctrl->rxSaveBuf, ctrl->rxBuf, ctrl->rxBufIndex);
     ctrl->rxSaveCounter = ctrl->rxBufIndex;
     ctrl->rxSaveBuf[ctrl->rxBufIndex] = 0;
     ctrl->rxSaveFlag = 1;
-    ctrl->rxFlag = 0;
     ctrl->rxBufIndex = 0;
+    HAL_UART_Receive_IT(ctrl->huart, ctrl->rxBuf, 1);
     return 1;
   }
   return 0;
@@ -143,18 +139,18 @@ uint8_t Uart_O_Timeout_Check(uart_o_ctrl_t *ctrl) {
  * @retval 1: end bit, 0: not end bit
  */
 uint8_t Uart_E_Data_Process(uart_e_ctrl_t *ctrl) {
-  ctrl->rxFlag = 1;
-  ctrl->rxBuf[ctrl->rxBufIndex++] = ctrl->rxData[0];
+  ctrl->rxBufIndex++;
   if (ctrl->rxBufIndex >= RX_BUFFER_SIZE - 1 ||
-      ctrl->rxData[0] == ctrl->rxEndBit) {
+      ctrl->rxBuf[ctrl->rxBufIndex - 1] == ctrl->rxEndBit) {
+    ctrl->rxBufIndex--;
     memcpy(ctrl->rxSaveBuf, ctrl->rxBuf, ctrl->rxBufIndex);
     ctrl->rxSaveCounter = ctrl->rxBufIndex;
     ctrl->rxSaveBuf[ctrl->rxBufIndex] = 0;
     ctrl->rxSaveFlag = 1;
-    ctrl->rxFlag = 0;
     ctrl->rxBufIndex = 0;
+    HAL_UART_Receive_IT(ctrl->huart, ctrl->rxBuf, 1);
     return 1;
   }
-  HAL_UART_Receive_IT(ctrl->huart, ctrl->rxData, 1);
+  HAL_UART_Receive_IT(ctrl->huart, ctrl->rxBuf + ctrl->rxBufIndex, 1);
   return 0;
 }

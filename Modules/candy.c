@@ -17,8 +17,6 @@ float fmap(float x, float in_min, float in_max, float out_min, float out_max) {
 void delay_us(uint16_t us)
 {
     uint16_t differ=0xffff-us-5;
-
-
     HAL_TIM_Base_Start(&_DELAY_TIM);
     __HAL_TIM_SetCounter(&_DELAY_TIM,differ);
     while(differ < 0xffff-5)
