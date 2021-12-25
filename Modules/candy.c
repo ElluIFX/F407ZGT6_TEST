@@ -37,6 +37,7 @@ void delay_us(uint16_t us) {
   HAL_TIM_Base_Stop(&_DELAY_TIM);
 }
 
+#if _WS2812_USED_
 /**
  * @brief Send data bits to WS2812, can be used only when MCU's SYSCLK is
  * 168MHz.
@@ -55,3 +56,18 @@ void WS2812_SendBit(uint8_t* data, uint16_t len) {
     }
   }
 }
+#endif // _WS2812_USED_
+
+#if _RGB_LED_USED_
+/**
+ * @brief control RGB led
+ * @param uint8_t RGBstat
+ * @retval None
+ * @note RGBstat = 0x00, RGB off
+ **/
+void RGB(uint8_t R, uint8_t G, uint8_t B) {
+  HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, !R);
+  HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, !G);
+  HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, !B);
+}
+#endif // _RGB_LED_USED_

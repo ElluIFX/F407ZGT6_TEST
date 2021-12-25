@@ -176,17 +176,7 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-/**
- * @brief control RGB led
- * @param uint8_t RGBstat
- * @retval None
- * @note RGBstat = 0x00, RGB off
- **/
-void RGB(uint8_t R, uint8_t G, uint8_t B) {
-  HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, !R);
-  HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, !G);
-  HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, !B);
-}
+
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
   if (huart->Instance == USART1) {

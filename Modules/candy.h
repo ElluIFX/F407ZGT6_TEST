@@ -10,7 +10,11 @@
 
 #ifndef CANDY_H
 #define CANDY_H
+/***** settings *****/
+#define _RGB_LED_USED_ 1
+#define _WS2812_USED_ 1
 
+/**** end settings ****/
 #include <main.h>
 
 #include "tim.h"
@@ -25,12 +29,16 @@
 #define _DELAY_TIM htim6
 void delay_us(uint16_t us);
 
-// fmap
+// single func functions
 
 float fmap(float x, float in_min, float in_max, float out_min, float out_max);
 
+// RGB led functions
+#if _RGB_LED_USED_
+void RGB(uint8_t r, uint8_t g, uint8_t b);
+#endif  // _RGB_LED_USED_
 // WS2812
-
+#if _WS2812_USED_
 #define WS2812_PIN WS2812_GPIO_Port, WS2812_Pin
 #define __DELAY_350NS for (uint8_t i = 0; i < 8; i++)
 #define __DELAY_600NS for (uint8_t i = 0; i < 13; i++)
@@ -49,5 +57,6 @@ float fmap(float x, float in_min, float in_max, float out_min, float out_max);
 #define __2812_RESET delay_us(60)
 #define __SET_2812_RGB(r, g, b) WS2812_SendBit((uint8_t[]){g, r, b}, 1)
 void WS2812_SendBit(uint8_t* data, uint16_t le);
+#endif  // _WS2812_USED_
 
-#endif
+#endif  // CANDY_H
