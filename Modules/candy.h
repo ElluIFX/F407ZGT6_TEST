@@ -11,10 +11,11 @@
 #ifndef CANDY_H
 #define CANDY_H
 #include <main.h>
+#include "tim.h"
 
-float fmap(float x, float in_min, float in_max, float out_min, float out_max);
 #define S_END_BIT "\xff\xff\xff"
 #define screen(x,...) printft(&huart2,x,__VA_ARGS__)
+#define _DELAY_TIM htim6
 
-
+float fmap(float x, float in_min, float in_max, float out_min, float out_max);
 #endif
