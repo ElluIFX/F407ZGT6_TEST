@@ -54,7 +54,6 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
-void RGB(uint8_t r, uint8_t g, uint8_t b);
 
 /* USER CODE END EFP */
 
