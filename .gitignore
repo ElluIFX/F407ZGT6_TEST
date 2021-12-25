@@ -4,3 +4,8 @@
 *.o
 *.bak
 build/
+openocd.cfg
+*.svd
+*.ld
+startup*.s
+.mxproject
