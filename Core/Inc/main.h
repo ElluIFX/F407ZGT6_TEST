@@ -63,6 +63,8 @@ void RGB(uint8_t r, uint8_t g, uint8_t b);
 #define KEY_1_GPIO_Port GPIOE
 #define KEY_2_Pin GPIO_PIN_3
 #define KEY_2_GPIO_Port GPIOE
+#define WS2812_Pin GPIO_PIN_15
+#define WS2812_GPIO_Port GPIOB
 #define LED_R_Pin GPIO_PIN_6
 #define LED_R_GPIO_Port GPIOG
 #define LED_G_Pin GPIO_PIN_7
