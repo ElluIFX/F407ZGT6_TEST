@@ -19,11 +19,12 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
 #include "adc.h"
 #include "dac.h"
+#include "gpio.h"
 #include "tim.h"
 #include "usart.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -73,18 +74,18 @@ void SystemClock_Config(void);
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick.
+   */
   HAL_Init();
 
   /* USER CODE BEGIN Init */
@@ -111,6 +112,9 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   RGB(1, 0, 0);
+  uint32_t data[1]={0xffffff00};
+  WS2812_SendBit(data,1);
+  // __SET_2812_RGB(0,0,0,0);
   Scheduler_Init();  // initialize scheduler
   Enable_Uart_O_Control(&huart1, &uart_1);
   Enable_Uart_O_Control(&huart2, &uart_s);
@@ -125,28 +129,27 @@ int main(void)
     Scheduler_Run();   // run scheduler
     User_Task_Ctrl();  // run user task
   }
-    /* USER CODE END WHILE */
+  /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+  /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+   * in the RCC_OscInitTypeDef structure.
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -155,28 +158,24 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
     Error_Handler();
   }
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
+                                RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
-  {
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
     Error_Handler();
   }
 }
 
 /* USER CODE BEGIN 4 */
-
-
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
   if (huart->Instance == USART1) {
@@ -301,15 +300,15 @@ void Task_Screen_Controller(void) {
           if (sscanf((char *)__RX_DATA(uart_s), "s:%f", &speed) == 1)
             __MOTOR_SET_SPEED(motor_1, speed);
           else if (sscanf((char *)__RX_DATA(uart_s), "sp:%f", &setSpdKp) == 1) {
-            setPosKp /= 10000.0f;
+            setSpdKp /= 10000.0f;
             motor_1.spdPID.proportion = setSpdKp;
           } else if (sscanf((char *)__RX_DATA(uart_s), "si:%f", &setSpdKi) ==
                      1) {
-            setPosKi /= 10000.0f;
+            setSpdKi /= 10000.0f;
             motor_1.spdPID.integral = setSpdKi;
           } else if (sscanf((char *)__RX_DATA(uart_s), "sd:%f", &setSpdKd) ==
                      1) {
-            setPosKd /= 10000.0f;
+            setSpdKd /= 10000.0f;
             motor_1.spdPID.derivative = setSpdKd;
           }
           break;
@@ -343,8 +342,6 @@ void Task_Screen_Controller(void) {
                (int)(motor_1.posPID.proportion * 10000.0f), S_END_BIT,
                (int)(motor_1.posPID.integral * 10000.0f), S_END_BIT,
                (int)(motor_1.posPID.derivative * 10000.0f), S_END_BIT);
-        // screen("thsp=15%sthup=1%susup=1%s", S_END_BIT, S_END_BIT,
-        // S_END_BIT);kkeil
         RGB(1, 0, 1);
         HAL_Delay(1000);
         RGB(0, 1, 0);
@@ -407,11 +404,10 @@ void Task_Param_Report(void) {
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return
    * state */
@@ -421,16 +417,15 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t *file, uint32_t line)
-{
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
+void assert_failed(uint8_t *file, uint32_t line) {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line
      number,

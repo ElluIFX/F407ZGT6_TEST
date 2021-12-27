@@ -54,9 +54,8 @@ void RGB(uint8_t r, uint8_t g, uint8_t b);
   __DELAY_350NS;                                     \
   HAL_GPIO_WritePin(WS2812_PIN_DEF, GPIO_PIN_RESET); \
   __DELAY_800NS
-#define __2812_RESET delay_us(60)
-#define __SET_2812_RGB(r, g, b) WS2812_SendBit((uint8_t[]){g, r, b}, 1)
-void WS2812_SendBit(uint8_t* data, uint16_t le);
+#define __2812_RESET delay_us(70)
+void WS2812_SendBit(uint32_t* data, uint8_t len);
 #endif  // _WS2812_USED_
 
 #endif  // CANDY_H
