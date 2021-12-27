@@ -41,20 +41,27 @@ void delay_us(uint16_t us) {
 /**
  * @brief Send data bits to WS2812, can be used only when MCU's SYSCLK is
  * 168MHz.
- * @param  data             uint8_t color array in G R B order, total length is
- * 3 * number of LEDs, the first LED in left.
+ * @param  data             uint32_t LED array, each in Br G R B
+ * order(eg.0xffffffff as White), Br is brightness, using OR to combine
+ * Total length equals number of LEDs, the first LED in left.
  * @param  len              the number of LEDs
  */
-void WS2812_SendBit(uint8_t* data, uint16_t len) {
-  __2812_RESET;
-  len *= 24;
-  for (uint16_t i = 0; i < len; i++) {
-    if (data[i / 8] & (1 << (7 - i % 8))) {
-      __2812_HIGH_BIT;
-    } else {
-      __2812_LOW_BIT;
+void WS2812_SendBit(uint32_t* data, uint8_t len) {
+  __disable_irq();  // disable all interrupts
+  uint8_t i = 0;
+  uint8_t j = 0;
+  for (i = 0; i < len; i++) {
+    for (j = 0; j < 24; j++) {
+      if ((data[i] & (0x800000 >> j))
+          // & (data[i] & (0x80000000 >> (j % 8)))
+      ) {
+        __2812_HIGH_BIT;
+      } else {
+        __2812_LOW_BIT;
+      }
     }
   }
+  __enable_irq();  // enable all interrupts
 }
 #endif  // _WS2812_USED_
 
