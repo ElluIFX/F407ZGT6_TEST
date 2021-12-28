@@ -23,6 +23,7 @@
 #include "adc.h"
 #include "dac.h"
 #include "gpio.h"
+#include "i2c.h"
 #include "tim.h"
 #include "usart.h"
 
@@ -31,6 +32,7 @@
 #include "candy.h"
 #include "key.h"
 #include "math.h"
+#include "mpu6050.h"
 #include "pid.h"
 #include "programCtrl.h"
 #include "scheduler.h"
@@ -61,6 +63,7 @@ uart_o_ctrl_t uart_1;
 uart_o_ctrl_t uart_s;
 unsigned short keyValue;
 motor_t motor_1;
+MPU6050_t MPU6050;
 static uint8_t userMode = 0;
 /* USER CODE END PV */
 
@@ -111,11 +114,15 @@ int main(void) {
   MX_TIM7_Init();
   MX_USART2_UART_Init();
   MX_TIM6_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   RGB(1, 0, 0);
   Scheduler_Init();  // initialize scheduler
   Enable_Uart_O_Control(&huart1, &uart_1);
   Enable_Uart_O_Control(&huart2, &uart_s);
+  while (MPU6050_Init(&MPU6050, &hi2c1) == 1)
+    ;
+  MPU6050_Start_Calibration(&MPU6050);
   Motor_Setup(&motor_1, &htim5, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
   screen("%srest%s", S_END_BIT, S_END_BIT);  // clear screen
   /* USER CODE END 2 */
@@ -397,6 +404,17 @@ void Task_Param_Report(void) {
              (int)(__MOTOR_GET_DEGREE(motor_1) * 100), S_END_BIT);
       break;
   }
+}
+
+void Task_MPU_Process(void) {
+  static uint8_t cnt = 0;
+  if (cnt < 100) {
+    cnt++;
+  } else if (cnt == 100) {
+    cnt = 101;
+    MPU6050_Stop_Calibration(&MPU6050);
+  }
+  MPU6050_Read_All(&MPU6050);
 }
 /* USER CODE END 4 */
 

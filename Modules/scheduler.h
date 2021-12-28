@@ -20,6 +20,7 @@
 #define MOTOR_POS_PID_TASK_ID 3
 #define MOTOR_SPD_PID_TASK_ID 4
 #define PARAM_REPORT_TASK_ID 5
+#define MPU_PROCESS_TASK_ID 6
 
 #define SCH_TASK_COUNT sizeof(schTaskList) / sizeof(scheduler_task_t)
 // typedef
@@ -38,6 +39,7 @@ __weak void Task_Uart_Overtime(void);
 __weak void Task_Motor_Pos_PID(void);
 __weak void Task_Motor_Spd_PID(void);
 __weak void Task_Param_Report(void);
+__weak void Task_MPU_Process(void);
 
 void Scheduler_Init(void);
 void Scheduler_Run(void);
