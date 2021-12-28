@@ -29,13 +29,19 @@ typedef struct {        // MPU6050 data struct
 
   float Temperature;  // Temperature
 
-  double KalmanAngleX;      // Kalman filtering X-axis angle
-  double KalmanAngleY;      // Kalman filtering Y-axis angle
-  double ZDegree;           // Z-axis degree
-  double ZDzeroError;       // Z-axis degree zero error
-  double sumZeroError;      // Sum of Z-axis degree zero error
-  int16_t getErrorCount;    // count sum of Z-axis degree zero error
-  int8_t getErrorFlag;      // get error flag
+  double KalmanAngleX;  // Kalman filtering X-axis angle
+  double KalmanAngleY;  // Kalman filtering Y-axis angle
+  double CalibrAngleX;  // Calibrating X-axis angle
+  double CalibrAngleY;  // Calibrating Y-axis angle
+  int8_t CalibrFlag;    // Calibrating flag
+
+  double ZDegree;         // Z-axis degree
+  double ZDzeroError;     // Z-axis degree zero error
+  double sumZeroError;    // Sum of Z-axis degree zero error
+  int16_t getErrorCount;  // count sum of Z-axis degree zero error
+  int8_t getErrorFlag;    // get error flag
+
+  uint32_t timer;           // timer
   I2C_HandleTypeDef *I2Cx;  // I2Cx
 } MPU6050_t;
 
@@ -68,5 +74,7 @@ void MPU6050_Stop_Calibration(MPU6050_t *DataStruct);
 
 double Kalman_getAngle(Kalman_t *Kalman, double newAngle, double newRate,
                        double dt);
+
+void MPU6050_Reset(MPU6050_t *DataStruct);
 
 #endif /* MPU6050_H_ */

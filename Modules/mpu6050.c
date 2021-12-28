@@ -36,6 +36,7 @@
 
 #include <math.h>
 
+#include "string.h"
 #define RAD_TO_DEG 57.295779513082320876798154814105
 
 #define WHO_AM_I_REG 0x75
@@ -52,7 +53,7 @@
 const uint16_t i2c_timeout = 100;
 const double Accel_Z_corrector = 14418.0;
 
-uint32_t timer;
+
 
 Kalman_t KalmanX = {.Q_angle = 0.001f, .Q_bias = 0.003f, .R_measure = 0.03f};
 
@@ -171,7 +172,9 @@ void MPU6050_Start_Calibration(MPU6050_t *DataStruct) {
 
 void MPU6050_Stop_Calibration(MPU6050_t *DataStruct) {
   DataStruct->getErrorFlag = 0;
-  DataStruct->ZDzeroError = DataStruct->sumZeroError / DataStruct->getErrorCount;
+  DataStruct->ZDegree = 0;
+  DataStruct->ZDzeroError =
+      DataStruct->sumZeroError / DataStruct->getErrorCount;
 }
 
 void MPU6050_Read_All(MPU6050_t *DataStruct) {
@@ -203,8 +206,8 @@ void MPU6050_Read_All(MPU6050_t *DataStruct) {
   DataStruct->Gz = DataStruct->Gyro_Z_RAW / 131.0;
 
   // Kalman angle solve
-  double dt = (double)(HAL_GetTick() - timer) / 1000;
-  timer = HAL_GetTick();
+  double dt = (double)(HAL_GetTick() - DataStruct->timer) / 1000;
+  DataStruct->timer = HAL_GetTick();
   double roll;
   double roll_sqrt = sqrt(DataStruct->Accel_X_RAW * DataStruct->Accel_X_RAW +
                           DataStruct->Accel_Z_RAW * DataStruct->Accel_Z_RAW);
@@ -231,13 +234,20 @@ void MPU6050_Read_All(MPU6050_t *DataStruct) {
 
   DataStruct->KalmanAngleX =
       Kalman_getAngle(&KalmanX, roll, DataStruct->Gx, dt);
-
+  if (DataStruct->CalibrFlag) {
+    DataStruct->CalibrAngleX = DataStruct->KalmanAngleX;
+    DataStruct->CalibrAngleY = DataStruct->KalmanAngleY;
+    DataStruct->CalibrFlag = 0;
+  } else {
+    DataStruct->KalmanAngleX -= DataStruct->CalibrAngleX;
+    DataStruct->KalmanAngleY -= DataStruct->CalibrAngleY;
+  }
   if (DataStruct->getErrorFlag) {
     DataStruct->sumZeroError += DataStruct->Gz;
     DataStruct->getErrorCount++;
+  } else {
+    DataStruct->ZDegree += (DataStruct->Gz - DataStruct->ZDzeroError) * dt;
   }
-
-  DataStruct->ZDegree += (DataStruct->Gz - DataStruct->ZDzeroError) * dt;
 }
 
 double Kalman_getAngle(Kalman_t *Kalman, double newAngle, double newRate,
@@ -270,3 +280,8 @@ double Kalman_getAngle(Kalman_t *Kalman, double newAngle, double newRate,
 
   return Kalman->angle;
 };
+
+void MPU6050_Reset(MPU6050_t *DataStruct) {
+  DataStruct->ZDegree = 0;
+  DataStruct->CalibrFlag = 1;
+}

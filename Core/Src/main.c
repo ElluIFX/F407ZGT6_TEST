@@ -116,7 +116,6 @@ int main(void) {
   MX_TIM6_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  RGB(1, 0, 0);
   Scheduler_Init();  // initialize scheduler
   Enable_Uart_O_Control(&huart1, &uart_1);
   Enable_Uart_O_Control(&huart2, &uart_s);
@@ -125,6 +124,7 @@ int main(void) {
   MPU6050_Start_Calibration(&MPU6050);
   Motor_Setup(&motor_1, &htim5, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
   screen("%srest%s", S_END_BIT, S_END_BIT);  // clear screen
+  RGB(1, 0, 0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -360,6 +360,8 @@ void Task_Screen_Controller(void) {
     controlWord = __RX_DATA(uart_1)[0];
     if (controlWord == '>') {
       screen("%s", __RX_DATA(uart_1) + 1);
+    }else if (controlWord == 'r'){
+      MPU6050_Reset(&MPU6050);
     }
   }
 }
@@ -408,13 +410,16 @@ void Task_Param_Report(void) {
 
 void Task_MPU_Process(void) {
   static uint8_t cnt = 0;
-  if (cnt < 100) {
+  if (cnt < 200) {
     cnt++;
-  } else if (cnt == 100) {
-    cnt = 101;
+  } else if (cnt == 200) {
+    cnt = 0xff;
     MPU6050_Stop_Calibration(&MPU6050);
+    printf("MPU6050 Z Calibration Done\r\n");
+    HAL_Delay(100);
   }
   MPU6050_Read_All(&MPU6050);
+  printf("mpu:%f,%f,%f\r\n",MPU6050.KalmanAngleX,MPU6050.KalmanAngleY,MPU6050.ZDegree);
 }
 /* USER CODE END 4 */
 

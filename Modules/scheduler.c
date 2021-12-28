@@ -19,7 +19,7 @@ static scheduler_task_t schTaskList[] = {
     {Task_Uart_Controller, 20, 0, 0, 0}, {Task_Screen_Controller, 20, 0, 0, 1},
     {Task_Uart_Overtime, 100, 0, 0, 1},  {Task_Motor_Pos_PID, 20, 0, 0, 0},
     {Task_Motor_Spd_PID, 40, 0, 0, 0},   {Task_Param_Report, 20, 0, 0, 0},
-    {Task_MPU_Process, 20, 0, 0, 1},
+    {Task_MPU_Process, 40, 0, 0, 0},
 #if _ENABLE_SCH_DEBUG
     {Show_Sch_Debug_info, 0.2, 0, 0, 1},
 #endif
