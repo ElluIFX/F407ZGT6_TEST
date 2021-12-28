@@ -30,6 +30,7 @@
 /* USER CODE BEGIN Includes */
 #include "candy.h"
 #include "key.h"
+#include "math.h"
 #include "pid.h"
 #include "programCtrl.h"
 #include "scheduler.h"
@@ -112,9 +113,6 @@ int main(void) {
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   RGB(1, 0, 0);
-  uint32_t data[1]={0xffffff00};
-  WS2812_SendBit(data,1);
-  // __SET_2812_RGB(0,0,0,0);
   Scheduler_Init();  // initialize scheduler
   Enable_Uart_O_Control(&huart1, &uart_1);
   Enable_Uart_O_Control(&huart2, &uart_s);
@@ -190,7 +188,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     Uart_O_Data_Process(&uart_s);
   }
 }
-
 /**
  * @brief 串口超时处理
  */

@@ -10,6 +10,8 @@
 
 #include "candy.h"
 
+#include "string.h"
+
 /**
  * @brief Linear mapping input to the specified range
  * @param  x                input value
@@ -45,16 +47,19 @@ void delay_us(uint16_t us) {
  * order(eg.0xffffffff as White), Br is brightness, using OR to combine
  * Total length equals number of LEDs, the first LED in left.
  * @param  len              the number of LEDs
+ * @param  br              brightness, 0-1
  */
-void WS2812_SendBit(uint32_t* data, uint8_t len) {
+void WS2812_SendBit(uint8_t* data, uint8_t len, float br) {
+  __IO uint8_t i = 0;
+  __IO uint8_t j = 0;
+  __IO float div = br;
+  __IO uint8_t temp = 0;
   __disable_irq();  // disable all interrupts
-  uint8_t i = 0;
-  uint8_t j = 0;
-  for (i = 0; i < len; i++) {
-    for (j = 0; j < 24; j++) {
-      if ((data[i] & (0x800000 >> j))
-          // & (data[i] & (0x80000000 >> (j % 8)))
-      ) {
+  for (i = 0; i < len * 3; i++) {
+    temp = *data++;
+    temp *= div;
+    for (j = 0; j < 8; j++) {
+      if (temp & (128 >> j)) {
         __2812_HIGH_BIT;
       } else {
         __2812_LOW_BIT;
