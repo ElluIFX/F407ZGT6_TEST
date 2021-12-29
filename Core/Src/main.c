@@ -30,14 +30,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "candy.h"
-#include "key.h"
-#include "math.h"
 #include "mpu6050.h"
 #include "pid.h"
 #include "programCtrl.h"
 #include "scheduler.h"
 #include "stdio.h"
-#include "string.h"
 #include "uartPack.h"
 
 /* USER CODE END Includes */
@@ -61,7 +58,6 @@
 /* USER CODE BEGIN PV */
 uart_o_ctrl_t uart_1;
 uart_o_ctrl_t uart_s;
-unsigned short keyValue;
 motor_t motor_1;
 MPU6050_t MPU6050;
 static uint8_t userMode = 0;
@@ -119,8 +115,7 @@ int main(void) {
   Scheduler_Init();  // initialize scheduler
   Enable_Uart_O_Control(&huart1, &uart_1);
   Enable_Uart_O_Control(&huart2, &uart_s);
-  while (MPU6050_Init(&MPU6050, &hi2c1) == 1)
-    ;
+  while (MPU6050_Init(&MPU6050, &hi2c1) == 1);
   MPU6050_Start_Calibration(&MPU6050);
   Motor_Setup(&motor_1, &htim5, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
   screen("%srest%s", S_END_BIT, S_END_BIT);  // clear screen
@@ -195,6 +190,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     Uart_O_Data_Process(&uart_s);
   }
 }
+
 /**
  * @brief 串口超时处理
  */
@@ -264,32 +260,32 @@ void Task_Screen_Controller(void) {
             userMode = 0;
             break;
           }
-          if (sscanf((char *)__RX_DATA(uart_s), "pp:%f", &setPosKp) == 1) {
+          if (sscanf((char *) __RX_DATA(uart_s), "pp:%f", &setPosKp) == 1) {
             setPosKp /= 10000.0f;
             motor_1.posPID.proportion = setPosKp;
-          } else if (sscanf((char *)__RX_DATA(uart_s), "pi:%f", &setPosKi) ==
+          } else if (sscanf((char *) __RX_DATA(uart_s), "pi:%f", &setPosKi) ==
                      1) {
             setPosKi /= 10000.0f;
             motor_1.posPID.integral = setPosKi;
-          } else if (sscanf((char *)__RX_DATA(uart_s), "pd:%f", &setPosKd) ==
+          } else if (sscanf((char *) __RX_DATA(uart_s), "pd:%f", &setPosKd) ==
                      1) {
             setPosKd /= 10000.0f;
             motor_1.posPID.derivative = setPosKd;
-          } else if (sscanf((char *)__RX_DATA(uart_s), "sp:%f", &setSpdKp) ==
+          } else if (sscanf((char *) __RX_DATA(uart_s), "sp:%f", &setSpdKp) ==
                      1) {
             setSpdKp /= 10000.0f;
             motor_1.spdPID.proportion = setSpdKp;
-          } else if (sscanf((char *)__RX_DATA(uart_s), "si:%f", &setSpdKi) ==
+          } else if (sscanf((char *) __RX_DATA(uart_s), "si:%f", &setSpdKi) ==
                      1) {
             setSpdKi /= 10000.0f;
             motor_1.spdPID.integral = setSpdKi;
-          } else if (sscanf((char *)__RX_DATA(uart_s), "sd:%f", &setSpdKd) ==
+          } else if (sscanf((char *) __RX_DATA(uart_s), "sd:%f", &setSpdKd) ==
                      1) {
             setSpdKd /= 10000.0f;
             motor_1.spdPID.derivative = setSpdKd;
-          } else if (sscanf((char *)__RX_DATA(uart_s), "gdeg:%f", &goDeg) == 1)
+          } else if (sscanf((char *) __RX_DATA(uart_s), "gdeg:%f", &goDeg) == 1)
             __MOTOR_GO_DEGREE(motor_1, goDeg);
-          else if (sscanf((char *)__RX_DATA(uart_s), "sdeg:%f", &setDeg) == 1)
+          else if (sscanf((char *) __RX_DATA(uart_s), "sdeg:%f", &setDeg) == 1)
             __MOTOR_SET_DEGREE(motor_1, setDeg);
           break;
         case 2:  //转速PID控制
@@ -301,16 +297,16 @@ void Task_Screen_Controller(void) {
             userMode = 0;
             break;
           }
-          if (sscanf((char *)__RX_DATA(uart_s), "s:%f", &speed) == 1)
+          if (sscanf((char *) __RX_DATA(uart_s), "s:%f", &speed) == 1)
             __MOTOR_SET_SPEED(motor_1, speed);
-          else if (sscanf((char *)__RX_DATA(uart_s), "sp:%f", &setSpdKp) == 1) {
+          else if (sscanf((char *) __RX_DATA(uart_s), "sp:%f", &setSpdKp) == 1) {
             setSpdKp /= 10000.0f;
             motor_1.spdPID.proportion = setSpdKp;
-          } else if (sscanf((char *)__RX_DATA(uart_s), "si:%f", &setSpdKi) ==
+          } else if (sscanf((char *) __RX_DATA(uart_s), "si:%f", &setSpdKi) ==
                      1) {
             setSpdKi /= 10000.0f;
             motor_1.spdPID.integral = setSpdKi;
-          } else if (sscanf((char *)__RX_DATA(uart_s), "sd:%f", &setSpdKd) ==
+          } else if (sscanf((char *) __RX_DATA(uart_s), "sd:%f", &setSpdKd) ==
                      1) {
             setSpdKd /= 10000.0f;
             motor_1.spdPID.derivative = setSpdKd;
@@ -324,7 +320,7 @@ void Task_Screen_Controller(void) {
             userMode = 0;
             break;
           }
-          if (sscanf((char *)__RX_DATA(uart_s), "d:%f", &duty) == 1) {
+          if (sscanf((char *) __RX_DATA(uart_s), "d:%f", &duty) == 1) {
             duty /= 10.0f;
             duty = fmap(duty, 0.0f, 100.0f, 50.0f, 100.0f);
             __MOTOR_PWM_SETFWD(motor_1, duty);
@@ -340,12 +336,12 @@ void Task_Screen_Controller(void) {
         screen("in.en=1%s", S_END_BIT);
         HAL_Delay(100);
         screen("sp=%d%ssi=%d%ssd=%d%spp=%d%spi=%d%spd=%d%s",
-               (int)(motor_1.spdPID.proportion * 10000.0f), S_END_BIT,
-               (int)(motor_1.spdPID.integral * 10000.0f), S_END_BIT,
-               (int)(motor_1.spdPID.derivative * 10000.0f), S_END_BIT,
-               (int)(motor_1.posPID.proportion * 10000.0f), S_END_BIT,
-               (int)(motor_1.posPID.integral * 10000.0f), S_END_BIT,
-               (int)(motor_1.posPID.derivative * 10000.0f), S_END_BIT);
+               (int) (motor_1.spdPID.proportion * 10000.0f), S_END_BIT,
+               (int) (motor_1.spdPID.integral * 10000.0f), S_END_BIT,
+               (int) (motor_1.spdPID.derivative * 10000.0f), S_END_BIT,
+               (int) (motor_1.posPID.proportion * 10000.0f), S_END_BIT,
+               (int) (motor_1.posPID.integral * 10000.0f), S_END_BIT,
+               (int) (motor_1.posPID.derivative * 10000.0f), S_END_BIT);
         RGB(1, 0, 1);
         HAL_Delay(1000);
         RGB(0, 1, 0);
@@ -360,11 +356,12 @@ void Task_Screen_Controller(void) {
     controlWord = __RX_DATA(uart_1)[0];
     if (controlWord == '>') {
       screen("%s", __RX_DATA(uart_1) + 1);
-    }else if (controlWord == 'r'){
+    } else if (controlWord == 'r') {
       MPU6050_Reset(&MPU6050);
     }
   }
 }
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   if (htim == &htim7) {  // 50Hz,20ms,用于精确读取转速
     HAL_GPIO_TogglePin(LED_R_GPIO_Port, LED_R_Pin);
@@ -385,25 +382,25 @@ void Task_Motor_Spd_PID(void) {
 void Task_Param_Report(void) {
   static uint8_t calc = 0;
   static uint8_t calc2 = 0;
-  calc = (uint8_t)fmap(motor_1.speed, -120, 120, 0, 80);
+  calc = (uint8_t) fmap(motor_1.speed, -120, 120, 0, 80);
   // printf("M1:%f,%f,%f,%ld\r\n", __MOTOR_GET_DEGREE(motor_1), motor_1.speed,
   //        motor_1.pwmDuty,
   //        __MOTOR_GET_POS(motor_1));  //输出位置，转速，PWM占空比
   switch (userMode) {
     case 3:
       screen("add map.id,0,%d%srpm.val=%d%s", calc, S_END_BIT,
-             (int)(motor_1.speed * 10), S_END_BIT);
+             (int) (motor_1.speed * 10), S_END_BIT);
       break;
     case 1:
-      calc2 = (uint8_t)fmap(__MOTOR_GET_DEGREE(motor_1), -720, 720, 0, 80);
+      calc2 = (uint8_t) fmap(__MOTOR_GET_DEGREE(motor_1), -720, 720, 0, 80);
       screen("add map.id,0,%d%sadd map.id,1,%d%srpm.val=%d%sdeg.val=%d%s", calc,
-             S_END_BIT, calc2, S_END_BIT, (int)(motor_1.speed * 10), S_END_BIT,
-             (int)(__MOTOR_GET_DEGREE(motor_1) * 100), S_END_BIT);
+             S_END_BIT, calc2, S_END_BIT, (int) (motor_1.speed * 10), S_END_BIT,
+             (int) (__MOTOR_GET_DEGREE(motor_1) * 100), S_END_BIT);
       break;
     case 2:
       screen("add map.id,0,%d%srpm.val=%d%sdeg.val=%d%s", calc, S_END_BIT,
-             (int)(motor_1.speed * 10), S_END_BIT,
-             (int)(__MOTOR_GET_DEGREE(motor_1) * 100), S_END_BIT);
+             (int) (motor_1.speed * 10), S_END_BIT,
+             (int) (__MOTOR_GET_DEGREE(motor_1) * 100), S_END_BIT);
       break;
   }
 }
@@ -419,7 +416,7 @@ void Task_MPU_Process(void) {
     HAL_Delay(100);
   }
   MPU6050_Read_All(&MPU6050);
-  printf("mpu:%f,%f,%f\r\n",MPU6050.KalmanAngleX,MPU6050.KalmanAngleY,MPU6050.ZDegree);
+  printf("mpu:%f,%f,%f\r\n", MPU6050.KalmanAngleX, MPU6050.KalmanAngleY, MPU6050.ZDegree);
 }
 /* USER CODE END 4 */
 
