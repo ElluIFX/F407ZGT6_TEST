@@ -7,3 +7,4 @@ build/
 openocd.cfg
 *.svd
 .mxproject
+.idea/
