@@ -33,7 +33,7 @@ void delay_us(uint16_t us);
 
 float fmap(float x, float in_min, float in_max, float out_min, float out_max);
 
-// RGB led functions
+// RGB LED functions
 #if _RGB_LED_USED_
 void RGB(uint8_t r, uint8_t g, uint8_t b);
 #endif  // _RGB_LED_USED_
