@@ -162,13 +162,13 @@ typedef struct {                  //电机闭环控制结构体
 #define __MOTOR_RESET_ENCODER(motor)                                 \
   __HAL_TIM_SET_COUNTER(motor.timEncoder, COUNTER_NEUTRAL_POSITION); \
   motor.lastPos = COUNTER_NEUTRAL_POSITION;                          \
-  motor.pos = COUNTER_NEUTRAL_POSITION;
+  motor.pos = COUNTER_NEUTRAL_POSITION
 
 //清空任意类型PID的误差累计
 #define __CLEAR_PID_ERROR(motor, pid) \
   pid.sumError = 0;                   \
   pid.error_1 = 0;                    \
-  pid.error_2 = 0;
+  pid.error_2 = 0
 
 //清空双环PID的误差累计
 #define __CLEAR_ALL_PID_ERROR(motor)      \
