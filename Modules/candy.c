@@ -10,7 +10,6 @@
 
 #include "candy.h"
 
-#include "string.h"
 
 /**
  * @brief Linear mapping input to the specified range
@@ -50,16 +49,16 @@ void delay_us(uint16_t us) {
  * @param  br              brightness, 0-1
  */
 void WS2812_SendBit(uint8_t* data, uint8_t len, float br) {
-  __IO uint8_t i = 0;
-  __IO uint8_t j = 0;
+  static uint8_t _i = 0;
+  static uint8_t _j = 0;
   __IO float div = br;
-  __IO uint8_t temp = 0;
+  static uint8_t temp = 0;
   __disable_irq();  // disable all interrupts
-  for (i = 0; i < len * 3; i++) {
+  for (_i = 0; _i < len * 3; _i++) {
     temp = *data++;
     temp *= div;
-    for (j = 0; j < 8; j++) {
-      if (temp & (128 >> j)) {
+    for (_j = 0; _j < 8; _j++) {
+      if (temp & (128 >> _j)) {
         __2812_HIGH_BIT;
       } else {
         __2812_LOW_BIT;
