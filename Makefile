@@ -181,12 +181,15 @@ OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
+	@echo Compiling $(notdir $<)...
 	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
+	@echo Compiling $(notdir $<)...
 	$(AS) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
+	@echo Generating binary files...
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
 
@@ -227,6 +230,7 @@ uarterase:
 	@STM32_Programmer_CLI -c port=$(PORT) br=$(BAUD) -e all
 	@echo ERASE Done
 
+.PHONY: all clean flash erase usbflash usberase uartflash uarterase
 #######################################
 # dependencies
 #######################################
