@@ -174,22 +174,28 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET
 # build the application
 #######################################
 # list of objects
+.PHONY: precfile presfile
+
+precfile:
+	@echo Compiling .C files...
+
+presfile:
+	@echo Compiling .S files...
+
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
 # list of ASM program objects
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
-$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
-	@echo Compiling $(notdir $<)...
+$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) precfile
 	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
-$(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
-	@echo Compiling $(notdir $<)...
+$(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR) presfile
 	$(AS) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
-	@echo Generating binary files...
+	@echo Generating ELF HEX and BIN files...
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
 
@@ -205,29 +211,30 @@ $(BUILD_DIR):
 #######################################
 # clean up
 #######################################
+
+UARTPORT = COM47
+UARTBAUD = 345600
+
 clean:
 	@del /Q $(BUILD_DIR)
 	@echo CLEAN Done
-flash:
-	@make && openocd -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+flash: all
+	@openocd -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 	@echo FLASH Done
 erase:
 	@openocd -f ./openocd.cfg -c "init;halt;reset halt;flash erase_address 0x08000000 0x20000;shutdown;"
 	@echo ERASE Done
-usbflash:
-	@make && STM32_Programmer_CLI -c port=usb1 -w "$(BUILD_DIR)/$(TARGET).bin" 0x08000000 -v -g 0x08000000
+usbflash: all
+	@STM32_Programmer_CLI -c port=usb1 -w "$(BUILD_DIR)/$(TARGET).bin" 0x08000000 -v -g 0x08000000
 	@echo USB FLASH Done
 usberase:
 	@STM32_Programmer_CLI -c port=usb1 -e all
 	@echo ERASE Done
-
-PORT = COM47
-BAUD = 345600
-uartflash:
-	@make && STM32_Programmer_CLI -c port=$(PORT) br=$(BAUD) -w "$(BUILD_DIR)/$(TARGET).bin" 0x08000000 -v -g 0x08000000
+uartflash: all
+	@STM32_Programmer_CLI -c port=$(UARTPORT) br=$(UARTBAUD) -w "$(BUILD_DIR)/$(TARGET).bin" 0x08000000 -v -g 0x08000000
 	@echo UART FLASH Done
 uarterase:
-	@STM32_Programmer_CLI -c port=$(PORT) br=$(BAUD) -e all
+	@STM32_Programmer_CLI -c port=$(UARTPORT) br=$(UARTBAUD) -e all
 	@echo ERASE Done
 
 .PHONY: all clean flash erase usbflash usberase uartflash uarterase
